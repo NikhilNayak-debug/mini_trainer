@@ -13,6 +13,7 @@ from batch_metrics import BatchMetrics
 from sampler import get_data_loader
 from setup_model_for_training import setup_model, setup_training_components
 from utils import init_distributed_environment, log_rank_0, setup_logger
+from svd_utils import reconstruct_weight_matrix
 
 app = Typer(
     pretty_exceptions_show_locals=False,  # Hide local variables in tracebacks
@@ -45,12 +46,23 @@ def save_model(fsdp_model, samples_seen, output_dir, model_name_or_path):
     inner = getattr(fsdp_model, "module", fsdp_model)
     if hasattr(inner, "name_mapping"):
         for orig, safe in inner.name_mapping.items():
-            W = inner._reconstruct_weight(orig).to(torch.bfloat16)
+            U_high = state_dict.pop(f"{safe}_U_high")
+            S_high = state_dict.pop(f"{safe}_S_high")
+            V_high = state_dict.pop(f"{safe}_V_high")
+            U_low = state_dict.pop(f"svd_params.{safe}.U_low")
+            S_low = state_dict.pop(f"svd_params.{safe}.S_low")
+            V_low = state_dict.pop(f"svd_params.{safe}.V_low")
+            W = reconstruct_weight_matrix(
+                {
+                    "U_high": U_high,
+                    "S_high": S_high,
+                    "V_high": V_high,
+                    "U_low": U_low,
+                    "S_low": S_low,
+                    "V_low": V_low,
+                }
+            ).to(torch.bfloat16)
             state_dict[orig] = W
-            for key in [f"{safe}_U_high", f"{safe}_S_high", f"{safe}_V_high"]:
-                state_dict.pop(key, None)
-            for sub in ["U_low", "S_low", "V_low"]:
-                state_dict.pop(f"svd_params.{safe}.{sub}", None)
     state_dict = {k: v.to(torch.bfloat16) for k, v in state_dict.items()}
     
     if rank == 0:

@@ -13,12 +13,12 @@ def decompose_weight_matrix(weight: torch.Tensor, top_k: int):
     k = min(top_k, S.shape[0])
 
     svd = {
-        "U_high": U[:, :k].detach().to(device=device_local),
-        "S_high": S[:k].detach().to(device=device_local),
-        "V_high": Vt[:k, :].detach().to(device=device_local),
-        "U_low": nn.Parameter(U[:, k:].detach().to(device=device_local)),
-        "S_low": nn.Parameter(S[k:].detach().to(device=device_local)),
-        "V_low": nn.Parameter(Vt[k:, :].detach().to(device=device_local)),
+        "U_high": U[:, :k].contiguous().detach().to(device=device_local),
+        "S_high": S[:k].contiguous().detach().to(device=device_local),
+        "V_high": Vt[:k, :].contiguous().detach().to(device=device_local),
+        "U_low": nn.Parameter(U[:, k:].contiguous().detach().to(device=device_local)),
+        "S_low": nn.Parameter(S[k:].contiguous().detach().to(device=device_local)),
+        "V_low": nn.Parameter(Vt[k:, :].contiguous().detach().to(device=device_local)),
         "rank_high": k,
     }
     return svd
@@ -61,13 +61,36 @@ def project_gradient_to_orthogonal_space(svd_dict):
 
     if svd_dict["U_low"].grad is not None:
         dU = svd_dict["U_low"].grad
-        proj = U_high @ (U_high.transpose(0, 1) @ dU)
-        dU.sub_(proj)
+        # Support distributed tensors by operating on the local shard
+        local_U_high = getattr(U_high, "to_local", lambda: U_high)()
+        local_dU = getattr(dU, "to_local", lambda: dU)()
+        proj = local_U_high @ (local_U_high.transpose(0, 1) @ local_dU)
+        local_dU.sub_(proj)
+        if hasattr(dU, "_local_tensor"):
+            dU._local_tensor.copy_(local_dU)
+        else:
+            dU.copy_(local_dU)
 
     if svd_dict["V_low"].grad is not None:
         dV = svd_dict["V_low"].grad
-        proj = (dV @ V_high.transpose(0, 1)) @ V_high
-        dV.sub_(proj)
+        local_V_high = getattr(V_high, "to_local", lambda: V_high)()
+        local_dV = getattr(dV, "to_local", lambda: dV)()
+        proj = (local_dV @ local_V_high.transpose(0, 1)) @ local_V_high
+        local_dV.sub_(proj)
+        if hasattr(dV, "_local_tensor"):
+            dV._local_tensor.copy_(local_dV)
+        else:
+            dV.copy_(local_dV)
+    
+    # if svd_dict["U_low"].grad is not None:
+    #     dU = svd_dict["U_low"].grad
+    #     proj = U_high @ (U_high.transpose(0, 1) @ dU)
+    #     dU.sub_(proj)
+
+    # if svd_dict["V_low"].grad is not None:
+    #     dV = svd_dict["V_low"].grad
+    #     proj = (dV @ V_high.transpose(0, 1)) @ V_high
+    #     dV.sub_(proj)
 
 
 def auto_generate_target_svd_config(model):
@@ -126,6 +149,7 @@ def create_svd_model_class(base_cls):
             for name, param in list(self.named_parameters()):
                 if len(param.shape) == 2 and name in self.svd_config and self.svd_config[name] > 0:
                     top_k = self.svd_config[name]
+                    print(f"[SVD Init] Decomposing {name} with top_k={top_k}")
                     svd_dict = decompose_weight_matrix(param.data, top_k=top_k)
                     safe_name = name.replace(".", "_")
                     self.name_mapping[name] = safe_name
@@ -148,6 +172,8 @@ def create_svd_model_class(base_cls):
                     def make_forward(sn, bias):
                         def forward(x):
                             W = self._reconstruct_weight_by_safe_name(sn)
+                            if W.dtype != x.dtype:
+                                W = W.to(x.dtype)
                             return F.linear(x, W, bias)
                         return forward
 
@@ -184,13 +210,6 @@ def create_svd_model_class(base_cls):
                     "V_low": module_svd.V_low,
                 }
                 project_gradient_to_orthogonal_space(svd_dict)
-
-        # Bind helper methods to the class
-        ModelWithSVD._get_module_by_name = _get_module_by_name
-        ModelWithSVD._initialize_svd_parameters = _initialize_svd_parameters
-        ModelWithSVD._reconstruct_weight_by_safe_name = _reconstruct_weight_by_safe_name
-        ModelWithSVD._reconstruct_weight = _reconstruct_weight
-        ModelWithSVD.project_gradients = project_gradients
 
     ModelWithSVD.__name__ = f"{base_cls.__name__}WithSVD"
     return ModelWithSVD
