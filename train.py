@@ -13,7 +13,7 @@ from batch_metrics import BatchMetrics
 from sampler import get_data_loader
 from setup_model_for_training import setup_model, setup_training_components
 from utils import init_distributed_environment, log_rank_0, setup_logger
-from svd_utils import reconstruct_weight_matrix
+from svd_utils import reconstruct_weight_matrix # Used to reconstruct full weight matrix from SVD components during model save (for Orthogonal Subspace Learning models)
 
 app = Typer(
     pretty_exceptions_show_locals=False,  # Hide local variables in tracebacks
@@ -44,6 +44,7 @@ def save_model(fsdp_model, samples_seen, output_dir, model_name_or_path):
     from torch.distributed.checkpoint.state_dict import get_model_state_dict, StateDictOptions
     state_dict = get_model_state_dict(fsdp_model, options=StateDictOptions(full_state_dict=True))
     inner = getattr(fsdp_model, "module", fsdp_model)
+    # If model uses orthogonal subspace learning, reconstruct full weights from SVD components before saving
     if hasattr(inner, "name_mapping"):
         for orig, safe in inner.name_mapping.items():
             U_high = state_dict.pop(f"{safe}_U_high")
@@ -232,6 +233,7 @@ def main(
         print(f"Training parameters saved to {params_path}")
 
     setup_logger(level=logging_level.value)
+    # If Orthogonal Subspace Learning is enabled, loads a model with decomposed trainable low-rank + fixed high-rank subspace weights (see svd_utils)
     model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
