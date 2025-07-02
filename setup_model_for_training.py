@@ -101,8 +101,26 @@ def setup_model(model=None, orthogonal_subspace_learning: bool = False, **kwargs
             liger_fixed_fused_linear_cross_entropy_none_reduction,
         )
         from liger_kernel.transformers import AutoLigerKernelForCausalLM
-        model = AutoLigerKernelForCausalLM.from_pretrained(**base_model_args)
-        model = align_model_and_tokenizer(model, tokenizer)
+        if orthogonal_subspace_learning:
+            from svd_utils import create_svd_model_class, auto_generate_target_svd_config
+            tmp = AutoLigerKernelForCausalLM.from_pretrained(**base_model_args)
+            tmp = align_model_and_tokenizer(tmp, tokenizer)
+            svd_cfg = auto_generate_target_svd_config(tmp)
+            svd_cls = create_svd_model_class(tmp.__class__)
+            cfg = tmp.config
+            del tmp
+            torch.cuda.empty_cache()
+            model = svd_cls.from_pretrained(
+                **base_model_args,
+                config=cfg,
+                svd_config=svd_cfg,
+                initialize_svd=False,
+            )
+            model = align_model_and_tokenizer(model, tokenizer)
+            model.reinitialize_svd()
+        else:
+            model = AutoLigerKernelForCausalLM.from_pretrained(**base_model_args)
+            model = align_model_and_tokenizer(model, tokenizer)
     else:
         from none_reduction_losses import hf_fixed_cross_entropy_none_reduction
         patch_target_module(

@@ -64,6 +64,11 @@ def project_gradient_to_orthogonal_space(svd_dict):
         # Support distributed tensors by operating on the local shard
         local_U_high = getattr(U_high, "to_local", lambda: U_high)()
         local_dU = getattr(dU, "to_local", lambda: dU)()
+        if local_U_high.size(0) != local_dU.size(0):
+            rank = torch.distributed.get_rank()
+            start = rank * local_dU.size(0)
+            end = start + local_dU.size(0)
+            local_U_high = local_U_high[start:end]
         proj = local_U_high @ (local_U_high.transpose(0, 1) @ local_dU)
         local_dU.sub_(proj)
         if hasattr(dU, "_local_tensor"):
@@ -75,22 +80,17 @@ def project_gradient_to_orthogonal_space(svd_dict):
         dV = svd_dict["V_low"].grad
         local_V_high = getattr(V_high, "to_local", lambda: V_high)()
         local_dV = getattr(dV, "to_local", lambda: dV)()
+        if local_V_high.size(1) != local_dV.size(1):
+            rank = torch.distributed.get_rank()
+            start = rank * local_dV.size(1)
+            end = start + local_dV.size(1)
+            local_V_high = local_V_high[:, start:end]
         proj = (local_dV @ local_V_high.transpose(0, 1)) @ local_V_high
         local_dV.sub_(proj)
         if hasattr(dV, "_local_tensor"):
             dV._local_tensor.copy_(local_dV)
         else:
             dV.copy_(local_dV)
-    
-    # if svd_dict["U_low"].grad is not None:
-    #     dU = svd_dict["U_low"].grad
-    #     proj = U_high @ (U_high.transpose(0, 1) @ dU)
-    #     dU.sub_(proj)
-
-    # if svd_dict["V_low"].grad is not None:
-    #     dV = svd_dict["V_low"].grad
-    #     proj = (dV @ V_high.transpose(0, 1)) @ V_high
-    #     dV.sub_(proj)
 
 
 def auto_generate_target_svd_config(model):
