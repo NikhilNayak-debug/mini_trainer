@@ -8,6 +8,7 @@ from typer import Typer, Option
 
 from async_structured_logger import AsyncStructuredLogger
 import torch
+import torch.distributed as dist
 
 from batch_metrics import BatchMetrics
 from sampler import get_data_loader
@@ -217,6 +218,7 @@ def main(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
         orthogonal_subspace_learning=orthogonal_subspace_learning,
+        rank=rank,
     )
     model, optimizer, lr_scheduler = setup_training_components(model,
                                                                learning_rate=learning_rate,
