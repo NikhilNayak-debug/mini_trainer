@@ -266,7 +266,7 @@ def projection_test_template():
     print(f"total counted: {total_checked}")
 
     
-    svd_lm.project_gradients()
+    svd_lm.project_low_rank_singular_vectors()
     
     total_checked = 0
     U_correct_orthogonal_pieces = 0
@@ -617,7 +617,7 @@ if __name__ == '__main__':
     print(f"total counted: {total_checked}")
 
     
-    svd_lm.project_gradients()
+    svd_lm.project_low_rank_singular_vectors()
     
     total_checked = 0
     U_correct_orthogonal_pieces = 0

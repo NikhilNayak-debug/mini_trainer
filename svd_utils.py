@@ -52,7 +52,7 @@ class SVDModelProtocol(Protocol):
 
     def reinitialize_svd_distributed(self) -> None: ...
 
-    def project_gradients(self) -> None: ...
+    def project_low_rank_singular_vectors(self) -> None: ...
 
     def _reconstruct_weight_by_safe_name(
         self,
@@ -86,7 +86,7 @@ def is_svd_model(model: torch.nn.Module) -> bool:
     required_attrs = [
         "svd_config",
         "svd_params",
-        "project_gradients",
+        "project_low_rank_singular_vectors",
         "reinitialize_svd",
     ]
     return all(hasattr(model, attr) for attr in required_attrs)
@@ -221,60 +221,52 @@ def reconstruct_weight_matrix(
     return reconstructed
 
 
-def project_gradient_to_orthogonal_space(svd_dict: SVDDecompositionDict):
+def project_low_rank_singular_vectors_to_orthogonal_subspace(svd_dict: SVDDecompositionDict):
     """
-    Projects the gradient of the low-rank parameters (U_low, V_low) to be orthogonal to the frozen high-rank subspace.
+    Project the low-rank singular vectors (``U_low`` and ``V_low``) onto the subspace orthogonal to the frozen high-rank components.
+
+    This method should be called after the optimizer step. It removes any components of the updated low-rank vectors that lie in the directions spanned by ``U_high`` and ``V_high`` so that orthogonality is preserved.
 
     This step ensures that learning new tasks does not interfere with previously learned representations by enforcing an orthogonality constraint.
 
     TODO(osilkin): Add mixed-precision gradients here
     """
-    # Skip if no gradients present (sanity check)
-    if (
-        svd_dict["U_low"].grad is None
-        and svd_dict["S_low"].grad is None
-        and svd_dict["V_low"].grad is None
-    ):
-        return
 
     U_high = svd_dict["U_high"]
     V_high = svd_dict["V_high"]
 
-    # Project U_low gradients to space orthogonal to U_high
-    if svd_dict["U_low"].grad is not None:
-        dU = svd_dict["U_low"].grad
-        # Support distributed tensors by operating on the local shard
+    with torch.no_grad():
+        # Project U_low onto the space orthogonal to U_high
+        U_low = svd_dict["U_low"]
         local_U_high = getattr(U_high, "to_local", lambda: U_high)()
-        local_dU = getattr(dU, "to_local", lambda: dU)()
-        # Handle sharded tensors in distributed training
-        if local_U_high.size(0) != local_dU.size(0):
+        local_U_low = getattr(U_low, "to_local", lambda: U_low)()
+        if local_U_high.size(0) != local_U_low.size(0):
             rank = torch.distributed.get_rank()
-            start = rank * local_dU.size(0)
-            end = start + local_dU.size(0)
+            start = rank * local_U_low.size(0)
+            end = start + local_U_low.size(0)
             local_U_high = local_U_high[start:end]
-        proj = local_U_high @ (local_U_high.transpose(0, 1) @ local_dU)
-        local_dU.sub_(proj)
-        if hasattr(dU, "_local_tensor"):
-            dU._local_tensor.copy_(local_dU)
+        proj = local_U_high @ (local_U_high.transpose(0, 1) @ local_U_low)
+        local_U_low.sub_(proj)
+        if hasattr(U_low, "_local_tensor"):
+            U_low._local_tensor.copy_(local_U_low)
         else:
-            dU.copy_(local_dU)
-
-    # Repeat projection for V_low using V_high
-    if svd_dict["V_low"].grad is not None:
-        dV = svd_dict["V_low"].grad
+            U_low.copy_(local_U_low)
+        
+        # Project V_low onto the space orthogonal to V_high
+        V_low = svd_dict["V_low"]
         local_V_high = getattr(V_high, "to_local", lambda: V_high)()
-        local_dV = getattr(dV, "to_local", lambda: dV)()
-        if local_V_high.size(1) != local_dV.size(1):
+        local_V_low = getattr(V_low, "to_local", lambda: V_low)()
+        if local_V_high.size(1) != local_V_low.size(1):
             rank = torch.distributed.get_rank()
-            start = rank * local_dV.size(1)
-            end = start + local_dV.size(1)
+            start = rank * local_V_low.size(1)
+            end = start + local_V_low.size(1)
             local_V_high = local_V_high[:, start:end]
-        proj = (local_dV @ local_V_high.transpose(0, 1)) @ local_V_high
-        local_dV.sub_(proj)
-        if hasattr(dV, "_local_tensor"):
-            dV._local_tensor.copy_(local_dV)
+        proj = (local_V_low @ local_V_high.transpose(0, 1)) @ local_V_high
+        local_V_low.sub_(proj)
+        if hasattr(V_low, "_local_tensor"):
+            V_low._local_tensor.copy_(local_V_low)
         else:
-            dV.copy_(local_dV)
+            V_low.copy_(local_V_low)
 
 
 def get_svd_target_parameters(model, svd_config):
@@ -921,16 +913,16 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
             }
             return svd_dict
 
-        def project_gradients(self):
+        def project_low_rank_singular_vectors(self):
             """
-            Applies orthogonal projection to gradients of low-rank components to avoid interfering
-            with the high-rank subspace encoding prior task knowledge.
+            Project updated low-rank singular vectors onto the subspace orthogonal to the
+            frozen high-rank components to avoid interfering with the high-rank subspace encoding prior task knowledge.
 
-            This method should be called after backpropagation and before optimizer step.
+            This should be invoked after ``optimizer.step`` so that any drift of ``U_low`` or ``V_low`` into the high-rank directions is removed.
             """
             for safe_name in self.svd_params.keys():
                 svd_dict = self.get_svd_dict(safe_name)
-                project_gradient_to_orthogonal_space(svd_dict)
+                project_low_rank_singular_vectors_to_orthogonal_subspace(svd_dict)
 
         def prepare_state_dict_for_save(self, state_dict):
             """Reconstruct dense weights into ``state_dict`` for saving."""
@@ -964,15 +956,16 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
 
 def optim_wrapper(optimizer, model):
     """Wrap optimizer.step to project gradients before each update."""
-    if not hasattr(model, "project_gradients"):
+    if not hasattr(model, "project_low_rank_singular_vectors"):
         return optimizer
 
     import types
     orig_step = optimizer.step
 
     def step(self, *args, **kwargs):
-        model.project_gradients()
-        return orig_step(*args, **kwargs)
+        result = orig_step(*args, **kwargs)
+        model.project_low_rank_singular_vectors()
+        return result
 
     optimizer.step = types.MethodType(step, optimizer)
     return optimizer
