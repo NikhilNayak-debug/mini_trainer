@@ -123,6 +123,12 @@ class TestSingleSampleOverfitting:
             output = model(input_ids=input_ids, labels=labels)
             loss = output.loss
             
+            # Handle potential non-scalar loss (from patched loss function)
+            if loss.numel() > 1:
+                # Calculate mean of valid loss values
+                valid_mask = labels.view(-1) != -100
+                loss = loss.view(-1)[valid_mask].mean()
+            
             # Track loss
             losses.append(loss.item())
             

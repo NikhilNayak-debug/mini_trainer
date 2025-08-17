@@ -45,8 +45,8 @@ def wrap_fsdp2(model: torch.nn.Module) -> torch.nn.Module:
     # 4) Mixed-precision policy (bf16)
     mp_policy = MixedPrecisionPolicy(
         param_dtype=torch.bfloat16, 
-        reduce_dtype=torch.bfloat16,
-        output_dtype=torch.bfloat16)
+        reduce_dtype=torch.float32,
+    )
 
     # 4) FSDP2 wrap each block
     for idx, block in enumerate(layers):
@@ -104,9 +104,13 @@ def setup_model(
 ) -> torch.nn.Module | SVDModel:
     base_model_args = {
         "pretrained_model_name_or_path": kwargs['model_name_or_path'],
-        "torch_dtype": torch.bfloat16,
     }
-    base_model_args["attn_implementation"] = "flash_attention_2"
+    # Check if flash_attn is available, otherwise use eager
+    try:
+        import flash_attn
+        base_model_args["attn_implementation"] = "flash_attention_2"
+    except ImportError:
+        base_model_args["attn_implementation"] = "eager"
 
     tokenizer = AutoTokenizer.from_pretrained(kwargs["model_name_or_path"])
 

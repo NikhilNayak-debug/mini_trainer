@@ -46,6 +46,37 @@ Tests for the main training loop:
 - Multi-rank training coordination
 - CLI parameter handling
 
+### 6. GPU Tests (`gpu_tests/`)
+GPU-enabled tests that require CUDA and flash-attention:
+
+#### `test_mixed_precision.py`
+Tests for mixed precision training dtype validation:
+- FSDP2 mixed precision policy configuration
+- Model parameter dtype verification (FP32 vs BF16)
+- Gradient dtype validation after training iterations
+- Optimizer state dtype checking (exp_avg, exp_avg_sq)
+- Tiny Llama model creation (<1M parameters) for testing
+- Catches bugs where reduce_dtype is incorrectly set to BF16
+
+#### `test_single_gpu_training.py`
+Tests for single GPU training mechanics:
+- Complete training loop validation
+- Gradient accumulation behavior
+- Loss computation with different kernels (Liger vs HuggingFace)
+- Model convergence verification
+
+#### `test_multi_gpu_training.py`
+Tests for multi-GPU distributed training:
+- Distributed FSDP2 training coordination
+- Multi-rank gradient synchronization
+- Distributed data loading and sampling
+
+#### `test_overfitting.py`
+Tests for training accuracy and overfitting behavior:
+- Small dataset overfitting validation
+- Training convergence on minimal examples
+- Loss reduction verification
+
 ## Running Tests
 
 ### Using Tox (Recommended)
@@ -68,7 +99,10 @@ tox -e test-coverage
 
 ### Using pytest directly with uv
 ```bash
-# Run all tests
+# Run all tests (excluding GPU tests)
+uv run pytest tests/ -m "not gpu"
+
+# Run all tests including GPU tests (requires CUDA)
 uv run pytest tests/
 
 # Run specific test class
@@ -76,6 +110,12 @@ uv run pytest tests/test_data_loader.py::TestJsonlDataset
 
 # Run specific test method
 uv run pytest tests/test_data_loader.py::TestJsonlDataset::test_dataset_initialization
+
+# Run only GPU tests
+uv run pytest tests/gpu_tests/ -m gpu
+
+# Run specific GPU test
+uv run pytest tests/gpu_tests/test_mixed_precision.py::TestMixedPrecisionDtypes::test_fsdp2_mixed_precision_dtypes
 
 # Run with verbose output
 uv run pytest -v tests/
@@ -94,6 +134,8 @@ The test suite covers:
 - **Model Setup**: Initialization, FSDP wrapping, optimizer configuration
 - **Training Loop**: Forward/backward passes, gradient accumulation, checkpointing
 - **Distributed Training**: Multi-rank coordination, metrics reduction, synchronization
+- **Mixed Precision**: FSDP2 dtype policies, parameter/gradient/optimizer state validation
+- **GPU Training**: Single and multi-GPU training mechanics, convergence validation
 - **Utilities**: Logging, memory management, configuration handling
 
 ## Adding New Tests
@@ -107,11 +149,23 @@ When adding new functionality, ensure you:
 
 ## Test Requirements
 
+### Basic Tests
 Tests require the following packages (installed automatically by tox):
 - pytest >= 7.0
 - pytest-cov (for coverage reports)
 - pytest-mock (for advanced mocking)
 - All project dependencies
+
+### GPU Tests (`gpu_tests/`)
+GPU tests have additional requirements:
+- CUDA-capable GPU with sufficient memory
+- NVIDIA drivers and CUDA toolkit
+- flash-attention >= 2.0 (`pip install flash-attn`)
+- PyTorch with CUDA support
+
+GPU tests are marked with the `@pytest.mark.gpu` decorator and can be:
+- Skipped with `-m "not gpu"` if CUDA is unavailable
+- Run exclusively with `-m gpu` on GPU-enabled systems
 
 ## Performance Testing
 

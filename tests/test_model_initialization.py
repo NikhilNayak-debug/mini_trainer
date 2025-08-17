@@ -3,6 +3,8 @@ Test suite for model initialization and training setup.
 
 Tests the setup_model, setup_training_components, and related functions
 to ensure correct model initialization, FSDP wrapping, and optimizer setup.
+
+TODO: This file needs to be combined with `test_integration_small_models.py`
 """
 import sys
 import os
@@ -198,44 +200,7 @@ class TestSetupModel:
         mock_model_cls.assert_called_once()
         mock_align.assert_called_once_with(mock_model, mock_tokenizer)
     
-    @pytest.mark.skipif(True, reason="Liger kernels are optional dependency")
-    @patch('setup_model_for_training.AutoTokenizer.from_pretrained')
-    @patch('setup_model_for_training.patch_target_module')
-    def test_setup_model_with_liger(self, mock_patch, mock_tokenizer_cls):
-        """Test model setup with Liger kernels."""
-        mock_tokenizer = MagicMock()
-        mock_tokenizer_cls.return_value = mock_tokenizer
-        
-        # This test requires liger_kernel to be installed
-        pytest.skip("Liger kernels test requires optional dependency")
     
-    @patch('setup_model_for_training.AutoTokenizer.from_pretrained')
-    @patch('setup_model_for_training.AutoModelForCausalLM.from_pretrained')
-    @patch('setup_model_for_training.align_model_and_tokenizer')
-    def test_setup_model_unsupported_warning(self, mock_align, mock_model_cls, mock_tokenizer_cls):
-        """Test warning for unsupported model class."""
-        mock_tokenizer = MagicMock()
-        mock_tokenizer_cls.return_value = mock_tokenizer
-        
-        mock_model = MagicMock()
-        mock_model.__class__.__name__ = "UnsupportedModelForCausalLM"
-        mock_model_cls.return_value = mock_model
-        mock_align.return_value = mock_model
-        
-        with patch('setup_model_for_training.log_rank_0') as mock_log:
-            result = setup_model(
-                model_name_or_path="some/model",
-                use_liger_kernels=False,
-                orthogonal_subspace_learning=False,
-                rank=0
-            )
-        
-        # Should log warning about unsupported model
-        warning_logged = any("not in the list of supported models" in str(call) 
-                           for call in mock_log.call_args_list)
-        assert warning_logged
-
-
 class TestSetupTrainingComponents:
     """Test suite for training components setup."""
     

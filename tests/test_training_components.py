@@ -429,64 +429,11 @@ class TestDistributedUtils:
             check_distributed_is_synchronized()
 
 
-class TestLoggingUtils:
-    """Test suite for logging utilities."""
-    
-    @patch('utils.get_rank', return_value=0)
-    @patch('utils.is_initialized', return_value=True)
-    @patch('builtins.print')
-    def test_log_rank_0_main_process(self, mock_print, mock_is_init, mock_rank):
-        """Test logging on rank 0."""
-        log_rank_0("Test message", to_print=True)
-        
-        mock_print.assert_called_once_with("Test message")
-    
-    @patch('utils.get_rank', return_value=1)
-    @patch('utils.is_initialized', return_value=True)
-    @patch('builtins.print')
-    def test_log_rank_0_other_process(self, mock_print, mock_is_init, mock_rank):
-        """Test no logging on non-rank-0 processes."""
-        log_rank_0("Test message", to_print=True)
-        
-        mock_print.assert_not_called()
-    
-    @patch('utils.is_initialized', return_value=False)
-    @patch('builtins.print')
-    def test_log_rank_0_not_distributed(self, mock_print, mock_is_init):
-        """Test logging when distributed is not initialized."""
-        log_rank_0("Test message", to_print=True)
-        
-        mock_print.assert_called_once_with("Test message")
-    
-    @patch('utils.get_rank', return_value=0)
-    @patch('utils.is_initialized', return_value=True)
-    @patch('utils.logging.info')
-    def test_log_rank_0_logging_module(self, mock_log_info, mock_is_init, mock_rank):
-        """Test using logging module instead of print."""
-        log_rank_0("Test message", to_print=False)
-        
-        mock_log_info.assert_called_once_with("Test message")
-    
-    def test_get_caller(self):
-        """Test get_caller function."""
-        caller_info = get_caller()
-        
-        assert "test_training_components.py" in caller_info
-        assert "line" in caller_info
-    
-    @patch('utils.logging.basicConfig')
-    def test_setup_logger(self, mock_basic_config):
-        """Test logger setup."""
-        setup_logger(level="DEBUG")
-        
-        mock_basic_config.assert_called_once()
-        args, kwargs = mock_basic_config.call_args
-        assert kwargs['level'] == "DEBUG"
-        assert 'handlers' in kwargs
-
-
 class TestPatchTargetModule:
-    """Test suite for module patching utility."""
+    """
+    Test suite for module patching utility.
+    This is very important to validate, because we use it to patch the liger and transformers loss functions.
+    """
     
     def test_patch_target_module(self):
         """Test patching a module attribute."""

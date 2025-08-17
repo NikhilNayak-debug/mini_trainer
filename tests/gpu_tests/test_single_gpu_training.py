@@ -11,7 +11,8 @@ import numpy as np
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, get_scheduler
 from setup_model_for_training import setup_model, setup_training_components
-from sampler import get_data_loader
+from sampler import get_data_loader, JsonlDataset, InfiniteSampler, MaxTokensPerRankCollator
+from torch.utils.data import DataLoader
 from batch_metrics import BatchMetrics
 from utils import patch_target_module
 
@@ -121,13 +122,19 @@ class TestSingleGPUTraining:
         os.environ["WORLD_SIZE"] = "1"
         os.environ["LOCAL_RANK"] = "0"
         
-        data_loader = get_data_loader(
-            data_path=str(tokenized_data),
+        # Create data loader with 0 workers to avoid segfaults in test
+        dataset = JsonlDataset(str(tokenized_data))
+        data_loader = DataLoader(
+            dataset,
             batch_size=4,
-            max_tokens_per_gpu=1000,
-            seed=42,
-            rank=0,
-            world_size=1
+            sampler=InfiniteSampler(len(dataset), seed=42),
+            collate_fn=MaxTokensPerRankCollator(
+                max_tokens_per_rank=1000,
+                rank=0,
+                world_size=1,
+                dummy_sample=None
+            ),
+            num_workers=0  # Use 0 workers to avoid segfaults in test environment
         )
         
         # Training metrics
@@ -249,8 +256,16 @@ class TestSingleGPUTraining:
             labels = sample['labels'].unsqueeze(0).to(single_gpu_device)
             
             output = model(input_ids=input_ids, labels=labels)
-            loss = output.loss / 4  # Divide by accumulation steps
-            total_loss_single += output.loss.item()
+            
+            # Handle potential non-scalar loss
+            raw_loss = output.loss
+            if raw_loss.numel() > 1:
+                # Calculate mean of valid loss values
+                valid_mask = labels.view(-1) != -100
+                raw_loss = raw_loss.view(-1)[valid_mask].mean()
+            
+            loss = raw_loss / 4  # Divide by accumulation steps
+            total_loss_single += raw_loss.item()
             loss.backward()
         
         # Get gradients after accumulation
@@ -293,6 +308,13 @@ class TestSingleGPUTraining:
         
         output = model(input_ids=batch_input_ids, labels=batch_labels)
         loss = output.loss
+        
+        # Handle potential non-scalar loss
+        if loss.numel() > 1:
+            # Calculate mean of valid loss values
+            valid_mask = batch_labels.view(-1) != -100
+            loss = loss.view(-1)[valid_mask].mean()
+        
         total_loss_no_accum = loss.item() * 4  # Multiply for comparison
         loss.backward()
         
