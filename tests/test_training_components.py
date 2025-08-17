@@ -19,9 +19,9 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch, PropertyMock, call, mock_open
 from collections import defaultdict
 
-from train import take_gradient_step, save_model
-from batch_metrics import BatchMetrics
-from utils import (
+from mini_trainer.train import take_gradient_step, save_model
+from mini_trainer.batch_metrics import BatchMetrics
+from mini_trainer.utils import (
     init_distributed_environment,
     check_distributed_is_synchronized,
     log_rank_0,
@@ -62,7 +62,7 @@ class TestTakeGradientStep:
         scheduler.get_last_lr = MagicMock(return_value=[1e-5])
         return scheduler
     
-    @patch('train.torch.nn.utils.clip_grad_norm_')
+    @patch('mini_trainer.train.torch.nn.utils.clip_grad_norm_')
     def test_gradient_step_basic(self, mock_clip, mock_model, mock_optimizer, mock_scheduler):
         """Test basic gradient step execution."""
         mock_clip.return_value = torch.tensor(2.5)
@@ -80,7 +80,7 @@ class TestTakeGradientStep:
         # Check return value
         assert grad_norm.item() == 2.5
     
-    @patch('train.torch.nn.utils.clip_grad_norm_')
+    @patch('mini_trainer.train.torch.nn.utils.clip_grad_norm_')
     def test_gradient_step_order(self, mock_clip, mock_model, mock_optimizer, mock_scheduler):
         """Test that operations happen in correct order."""
         mock_clip.return_value = torch.tensor(1.0)
@@ -97,7 +97,7 @@ class TestTakeGradientStep:
         # Verify correct order
         assert call_order == ['clip', 'opt_step', 'sched_step', 'zero_grad']
     
-    @patch('train.torch.nn.utils.clip_grad_norm_')
+    @patch('mini_trainer.train.torch.nn.utils.clip_grad_norm_')
     def test_gradient_step_high_grad_norm(self, mock_clip, mock_model, mock_optimizer, mock_scheduler):
         """Test handling of high gradient norm."""
         mock_clip.return_value = torch.tensor(100.0)  # Very high grad norm
@@ -155,7 +155,7 @@ class TestBatchMetrics:
         assert metrics.minibatch_metrics['loss'] == 4.0
         assert metrics.minibatch_metrics['time_per_minibatch'] == 0.8
     
-    @patch('batch_metrics.torch.distributed.all_reduce')
+    @patch('mini_trainer.batch_metrics.torch.distributed.all_reduce')
     def test_reduce_batch_metrics(self, mock_all_reduce):
         """Test reducing metrics across distributed processes."""
         metrics = BatchMetrics()
@@ -236,14 +236,14 @@ class TestSaveModel:
         model.module.prepare_state_dict_for_save = MagicMock(side_effect=lambda x: x)
         return model
     
-    @patch('train.torch.distributed.get_rank', return_value=0)
-    @patch('train.torch.distributed.barrier')
+    @patch('mini_trainer.train.torch.distributed.get_rank', return_value=0)
+    @patch('mini_trainer.train.torch.distributed.barrier')
     @patch('torch.distributed.checkpoint.state_dict.get_model_state_dict')
     @patch('huggingface_hub.split_torch_state_dict_into_shards')
     @patch('safetensors.torch.save_file')
     @patch('transformers.AutoTokenizer.from_pretrained')
-    @patch('train.os.makedirs')
-    @patch('train.log_rank_0')
+    @patch('mini_trainer.train.os.makedirs')
+    @patch('mini_trainer.train.log_rank_0')
     def test_save_model_rank_0(self, mock_log, mock_makedirs, mock_tokenizer_cls,
                                mock_save_file, mock_split, mock_get_state_dict,
                                mock_barrier, mock_rank, mock_fsdp_model):
@@ -293,10 +293,10 @@ class TestSaveModel:
         # Check barrier for synchronization
         mock_barrier.assert_called()
     
-    @patch('train.torch.distributed.get_rank', return_value=1)
-    @patch('utils.get_rank', return_value=1)  # Also patch the utils version
-    @patch('utils.is_initialized', return_value=True)
-    @patch('train.torch.distributed.barrier')
+    @patch('mini_trainer.train.torch.distributed.get_rank', return_value=1)
+    @patch('mini_trainer.utils.get_rank', return_value=1)  # Also patch the utils version
+    @patch('mini_trainer.utils.is_initialized', return_value=True)
+    @patch('mini_trainer.train.torch.distributed.barrier')
     @patch('torch.distributed.checkpoint.state_dict.get_model_state_dict')
     def test_save_model_non_rank_0(self, mock_get_state_dict, mock_barrier, mock_is_init, mock_utils_rank, mock_rank, mock_fsdp_model):
         """Test that non-rank-0 processes wait at barrier."""
@@ -316,15 +316,15 @@ class TestSaveModel:
         # Should still get state dict (all ranks do this)
         mock_get_state_dict.assert_called_once()
     
-    @patch('train.torch.distributed.get_rank', return_value=0)
-    @patch('train.torch.distributed.barrier')
+    @patch('mini_trainer.train.torch.distributed.get_rank', return_value=0)
+    @patch('mini_trainer.train.torch.distributed.barrier')
     @patch('torch.distributed.checkpoint.state_dict.get_model_state_dict')
     @patch('huggingface_hub.split_torch_state_dict_into_shards')
     @patch('safetensors.torch.save_file')
     @patch('transformers.AutoTokenizer.from_pretrained')
     @patch('builtins.open', new_callable=mock_open)
-    @patch('train.os.makedirs')
-    @patch('train.log_rank_0')
+    @patch('mini_trainer.train.os.makedirs')
+    @patch('mini_trainer.train.log_rank_0')
     def test_save_model_sharded(self, mock_log, mock_makedirs, mock_file_open,
                                 mock_tokenizer_cls, mock_save_file, mock_split,
                                 mock_get_state_dict, mock_barrier, mock_rank, mock_fsdp_model):
@@ -371,11 +371,11 @@ class TestDistributedUtils:
     """Test suite for distributed training utilities."""
     
     @patch.dict(os.environ, {'LOCAL_RANK': '0'})
-    @patch('utils.torch.distributed.init_process_group')
-    @patch('utils.torch.cuda.set_device')
-    @patch('utils.check_distributed_is_synchronized')
-    @patch('utils.torch.distributed.barrier')
-    @patch('utils.log_rank_0')
+    @patch('mini_trainer.utils.torch.distributed.init_process_group')
+    @patch('mini_trainer.utils.torch.cuda.set_device')
+    @patch('mini_trainer.utils.check_distributed_is_synchronized')
+    @patch('mini_trainer.utils.torch.distributed.barrier')
+    @patch('mini_trainer.utils.log_rank_0')
     def test_init_distributed_environment(self, mock_log, mock_barrier, mock_check,
                                          mock_set_device, mock_init_pg):
         """Test distributed environment initialization."""
@@ -396,9 +396,9 @@ class TestDistributedUtils:
         # Check barrier
         mock_barrier.assert_called_once()
     
-    @patch('utils.dist.get_rank', return_value=0)
-    @patch('utils.dist.get_world_size', return_value=4)
-    @patch('utils.dist.all_reduce')
+    @patch('mini_trainer.utils.dist.get_rank', return_value=0)
+    @patch('mini_trainer.utils.dist.get_world_size', return_value=4)
+    @patch('mini_trainer.utils.dist.all_reduce')
     def test_check_distributed_synchronized(self, mock_all_reduce, mock_world_size, mock_rank):
         """Test distributed synchronization check."""
         # Mock successful all_reduce
@@ -413,9 +413,9 @@ class TestDistributedUtils:
         
         mock_all_reduce.assert_called_once()
     
-    @patch('utils.dist.get_rank', return_value=0)
-    @patch('utils.dist.get_world_size', return_value=4)
-    @patch('utils.dist.all_reduce')
+    @patch('mini_trainer.utils.dist.get_rank', return_value=0)
+    @patch('mini_trainer.utils.dist.get_world_size', return_value=4)
+    @patch('mini_trainer.utils.dist.all_reduce')
     def test_check_distributed_not_synchronized(self, mock_all_reduce, mock_world_size, mock_rank):
         """Test distributed synchronization check failure."""
         # Mock failed all_reduce
@@ -510,7 +510,7 @@ class TestTrainingIntegration:
         )
         
         # Take gradient step
-        with patch('train.torch.nn.utils.clip_grad_norm_') as mock_clip:
+        with patch('mini_trainer.train.torch.nn.utils.clip_grad_norm_') as mock_clip:
             mock_clip.return_value = torch.tensor(1.0)
             grad_norm = take_gradient_step(model, optimizer, scheduler)
         

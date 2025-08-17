@@ -7,8 +7,8 @@ from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
 )
 from torch.distributed.device_mesh import init_device_mesh
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from utils import log_rank_0, patch_target_module
-from svd_utils import SVDModel
+from .utils import log_rank_0, patch_target_module
+from .svd_utils import SVDModel
 
 
 
@@ -116,7 +116,7 @@ def setup_model(
 
     if kwargs.get("use_liger_kernels", False):
         """need to patch the loss function to not reduce, so we can reduce across all GPUs"""
-        from none_reduction_losses import (
+        from .none_reduction_losses import (
             liger_fixed_fused_linear_cross_entropy_none_reduction,
         )
 
@@ -126,7 +126,7 @@ def setup_model(
         )
         from liger_kernel.transformers import AutoLigerKernelForCausalLM as ModelClass
     else:
-        from none_reduction_losses import hf_fixed_cross_entropy_none_reduction
+        from .none_reduction_losses import hf_fixed_cross_entropy_none_reduction
         patch_target_module(
             "transformers.loss.loss_utils.fixed_cross_entropy",
             hf_fixed_cross_entropy_none_reduction,
@@ -140,7 +140,7 @@ def setup_model(
     # Load a subclassed model that supports orthogonal subspace learning using SVD decomposition
     def load_svd_model():
         # Import utility to decompose weights and inject projected low-rank updates
-        from svd_utils import create_svd_model_class, auto_generate_target_svd_config
+        from .svd_utils import create_svd_model_class, auto_generate_target_svd_config
 
         tmp = ModelClass.from_pretrained(**base_model_args)
         tmp = align_model_and_tokenizer(tmp, tokenizer)
@@ -227,7 +227,7 @@ def setup_training_components(model, **kwargs):
         betas=(0.9, 0.95),
         weight_decay=0.0,
     )
-    from svd_utils import optim_wrapper
+    from .svd_utils import optim_wrapper
     optimizer = optim_wrapper(optimizer, model)
     lr_scheduler = get_scheduler(
         name=kwargs['lr_scheduler'],

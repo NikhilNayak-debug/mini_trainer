@@ -16,7 +16,7 @@ import pytest
 from unittest.mock import MagicMock, patch, PropertyMock, call
 from transformers import AutoConfig
 
-from setup_model_for_training import (
+from mini_trainer.setup_model_for_training import (
     wrap_fsdp2,
     align_model_and_tokenizer,
     setup_model,
@@ -60,7 +60,7 @@ class TestAlignModelAndTokenizer:
         """Test vocab resizing when tokenizer has more tokens."""
         mock_tokenizer.__len__ = MagicMock(return_value=32005)
         
-        with patch('setup_model_for_training.log_rank_0') as mock_log:
+        with patch('mini_trainer.setup_model_for_training.log_rank_0') as mock_log:
             result = align_model_and_tokenizer(mock_model, mock_tokenizer)
         
         # Should resize to next multiple of 8
@@ -72,7 +72,7 @@ class TestAlignModelAndTokenizer:
         mock_model.config.bos_token_id = 998
         mock_model.config.eos_token_id = 997
         
-        with patch('setup_model_for_training.log_rank_0') as mock_log:
+        with patch('mini_trainer.setup_model_for_training.log_rank_0') as mock_log:
             result = align_model_and_tokenizer(mock_model, mock_tokenizer)
         
         # Special tokens should be aligned
@@ -88,7 +88,7 @@ class TestAlignModelAndTokenizer:
         mock_model.config.pad_token_id = None
         mock_tokenizer.pad_token_id = None
         
-        with patch('setup_model_for_training.log_rank_0') as mock_log:
+        with patch('mini_trainer.setup_model_for_training.log_rank_0') as mock_log:
             result = align_model_and_tokenizer(mock_model, mock_tokenizer)
         
         # None values should be left alone
@@ -114,11 +114,11 @@ class TestWrapFSDP2:
         
         return model
     
-    @patch('setup_model_for_training.dist.get_rank', return_value=0)
-    @patch('setup_model_for_training.dist.get_world_size', return_value=2)
-    @patch('setup_model_for_training.init_device_mesh')
-    @patch('setup_model_for_training.fully_shard')
-    @patch('setup_model_for_training.ptd_checkpoint_wrapper')
+    @patch('mini_trainer.setup_model_for_training.dist.get_rank', return_value=0)
+    @patch('mini_trainer.setup_model_for_training.dist.get_world_size', return_value=2)
+    @patch('mini_trainer.setup_model_for_training.init_device_mesh')
+    @patch('mini_trainer.setup_model_for_training.fully_shard')
+    @patch('mini_trainer.setup_model_for_training.ptd_checkpoint_wrapper')
     def test_wrap_fsdp2_basic(self, mock_checkpoint, mock_fully_shard, 
                                mock_init_mesh, mock_world_size, mock_rank, mock_model):
         """Test basic FSDP2 wrapping."""
@@ -140,11 +140,11 @@ class TestWrapFSDP2:
         # Should fully shard each layer and the model
         assert mock_fully_shard.call_count == 5  # 4 layers + 1 model
     
-    @patch('setup_model_for_training.dist.get_rank', return_value=1)
-    @patch('setup_model_for_training.dist.get_world_size', return_value=4)
-    @patch('setup_model_for_training.init_device_mesh')
-    @patch('setup_model_for_training.fully_shard')
-    @patch('setup_model_for_training.ptd_checkpoint_wrapper')
+    @patch('mini_trainer.setup_model_for_training.dist.get_rank', return_value=1)
+    @patch('mini_trainer.setup_model_for_training.dist.get_world_size', return_value=4)
+    @patch('mini_trainer.setup_model_for_training.init_device_mesh')
+    @patch('mini_trainer.setup_model_for_training.fully_shard')
+    @patch('mini_trainer.setup_model_for_training.ptd_checkpoint_wrapper')
     def test_wrap_fsdp2_multi_gpu(self, mock_checkpoint, mock_fully_shard,
                                    mock_init_mesh, mock_world_size, mock_rank, mock_model):
         """Test FSDP2 wrapping with multiple GPUs."""
@@ -163,7 +163,7 @@ class TestWrapFSDP2:
         assert to_call.type == 'cuda'
         assert to_call.index == 1
     
-    @patch('setup_model_for_training.dist.get_rank', return_value=0)
+    @patch('mini_trainer.setup_model_for_training.dist.get_rank', return_value=0)
     def test_wrap_fsdp2_no_layers_found(self, mock_rank, mock_model):
         """Test error handling when transformer layers not found."""
         mock_model.model = None  # No model attribute
@@ -175,9 +175,9 @@ class TestWrapFSDP2:
 class TestSetupModel:
     """Test suite for model setup."""
     
-    @patch('setup_model_for_training.AutoTokenizer.from_pretrained')
-    @patch('setup_model_for_training.AutoModelForCausalLM.from_pretrained')
-    @patch('setup_model_for_training.align_model_and_tokenizer')
+    @patch('mini_trainer.setup_model_for_training.AutoTokenizer.from_pretrained')
+    @patch('mini_trainer.setup_model_for_training.AutoModelForCausalLM.from_pretrained')
+    @patch('mini_trainer.setup_model_for_training.align_model_and_tokenizer')
     def test_setup_model_standard(self, mock_align, mock_model_cls, mock_tokenizer_cls):
         """Test standard model setup without special features."""
         mock_tokenizer = MagicMock()
@@ -188,7 +188,7 @@ class TestSetupModel:
         mock_model_cls.return_value = mock_model
         mock_align.return_value = mock_model
         
-        with patch('setup_model_for_training.log_rank_0'):
+        with patch('mini_trainer.setup_model_for_training.log_rank_0'):
             result = setup_model(
                 model_name_or_path="meta-llama/Llama-2-7b",
                 use_liger_kernels=False,
@@ -211,11 +211,11 @@ class TestSetupTrainingComponents:
         model.parameters = MagicMock(return_value=[MagicMock()])
         return model
     
-    @patch('setup_model_for_training.wrap_fsdp2')
+    @patch('mini_trainer.setup_model_for_training.wrap_fsdp2')
     @patch('transformers.get_scheduler')
-    @patch('setup_model_for_training.torch.optim.AdamW')
-    @patch('svd_utils.optim_wrapper')
-    @patch('setup_model_for_training.log_rank_0')
+    @patch('mini_trainer.setup_model_for_training.torch.optim.AdamW')
+    @patch('mini_trainer.svd_utils.optim_wrapper')
+    @patch('mini_trainer.setup_model_for_training.log_rank_0')
     def test_setup_training_components_basic(self, mock_log, mock_optim_wrapper, 
                                             mock_adamw, mock_scheduler, mock_wrap, mock_model):
         """Test basic training components setup."""
@@ -268,11 +268,11 @@ class TestSetupTrainingComponents:
         assert lr_scheduler.split_batches == True
         lr_scheduler.step.assert_called_once()
     
-    @patch('setup_model_for_training.wrap_fsdp2')
+    @patch('mini_trainer.setup_model_for_training.wrap_fsdp2')
     @patch('transformers.get_scheduler')
-    @patch('setup_model_for_training.torch.optim.AdamW')
-    @patch('svd_utils.optim_wrapper')
-    @patch('setup_model_for_training.log_rank_0')
+    @patch('mini_trainer.setup_model_for_training.torch.optim.AdamW')
+    @patch('mini_trainer.svd_utils.optim_wrapper')
+    @patch('mini_trainer.setup_model_for_training.log_rank_0')
     def test_setup_training_components_different_scheduler(self, mock_log, mock_optim_wrapper,
                                                           mock_adamw, mock_scheduler, mock_wrap, mock_model):
         """Test setup with different scheduler type."""
@@ -302,8 +302,8 @@ class TestIntegration:
     """Integration tests for model initialization and training setup."""
     
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
-    @patch('setup_model_for_training.dist.is_initialized', return_value=False)
-    @patch('setup_model_for_training.AutoTokenizer.from_pretrained')
+    @patch('mini_trainer.setup_model_for_training.dist.is_initialized', return_value=False)
+    @patch('mini_trainer.setup_model_for_training.AutoTokenizer.from_pretrained')
     def test_model_device_placement(self, mock_tokenizer, mock_dist_init):
         """Test that model is correctly placed on GPU."""
         # This test would require actual model loading
@@ -312,10 +312,10 @@ class TestIntegration:
     
     def test_end_to_end_mock(self):
         """Test end-to-end flow with mocks."""
-        with patch('setup_model_for_training.AutoTokenizer.from_pretrained') as mock_tok:
-            with patch('setup_model_for_training.AutoModelForCausalLM.from_pretrained') as mock_model_cls:
-                with patch('setup_model_for_training.wrap_fsdp2') as mock_wrap:
-                    with patch('setup_model_for_training.log_rank_0'):
+        with patch('mini_trainer.setup_model_for_training.AutoTokenizer.from_pretrained') as mock_tok:
+            with patch('mini_trainer.setup_model_for_training.AutoModelForCausalLM.from_pretrained') as mock_model_cls:
+                with patch('mini_trainer.setup_model_for_training.wrap_fsdp2') as mock_wrap:
+                    with patch('mini_trainer.setup_model_for_training.log_rank_0'):
                         mock_tokenizer = MagicMock()
                         mock_tokenizer.__len__ = MagicMock(return_value=32000)  # Set proper length
                         mock_tok.return_value = mock_tokenizer
@@ -338,9 +338,9 @@ class TestIntegration:
                         )
                         
                         # Setup training components
-                        with patch('setup_model_for_training.torch.optim.AdamW') as mock_adamw:
+                        with patch('mini_trainer.setup_model_for_training.torch.optim.AdamW') as mock_adamw:
                             with patch('transformers.get_scheduler') as mock_sched:
-                                with patch('svd_utils.optim_wrapper') as mock_opt_wrap:
+                                with patch('mini_trainer.svd_utils.optim_wrapper') as mock_opt_wrap:
                                     mock_optimizer = MagicMock()
                                     mock_adamw.return_value = mock_optimizer
                                     mock_opt_wrap.return_value = mock_optimizer

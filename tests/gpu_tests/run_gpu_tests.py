@@ -8,7 +8,6 @@ import argparse
 import sys
 import os
 import subprocess
-from pathlib import Path
 
 
 def check_cuda():

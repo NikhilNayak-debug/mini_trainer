@@ -16,7 +16,7 @@ import tempfile
 import json
 import os
 
-from sampler import InfiniteSampler, JsonlDataset, MaxTokensPerRankCollator, get_data_loader
+from mini_trainer.sampler import InfiniteSampler, JsonlDataset, MaxTokensPerRankCollator, get_data_loader
 
 
 class TestEpochTracking:

@@ -31,7 +31,7 @@ from torch.utils.data import Sampler, Dataset, DataLoader
 import torch.distributed as dist
 import numpy as np
 from datasets import load_dataset
-from batch_packer import batch_lengths_to_minibatches_lpt
+from .batch_packer import batch_lengths_to_minibatches_lpt
 
 def reset_minibatches(num_ranks: int):
     return [[] for _ in range(num_ranks)], np.zeros(num_ranks)
@@ -285,6 +285,15 @@ def get_data_loader(**kwargs):
     rank = kwargs.get('rank', None)
     world_size = kwargs.get('world_size', None)
     dummy_sample = kwargs.get('dummy_sample', None)
+    num_workers = kwargs.get('num_workers', 4)
+    
+    # In test environments or when debugging, it's safer to use fewer workers
+    # to avoid segmentation faults from multiprocessing issues
+    import os
+    if os.environ.get('PYTEST_CURRENT_TEST') or os.environ.get('TOX_ENV_NAME'):
+        # Running in test environment, use fewer workers for stability
+        num_workers = min(num_workers, 2)
+    
     return DataLoader(dataset, 
                       batch_size, 
                       sampler=InfiniteSampler(len(dataset), seed=seed),
@@ -292,7 +301,8 @@ def get_data_loader(**kwargs):
                                                           rank=rank, 
                                                           world_size=world_size, 
                                                           dummy_sample=dummy_sample),
-                      num_workers=4)
+                      num_workers=num_workers,
+                      persistent_workers=(num_workers > 0))
 
 if __name__ == "__main__":
     data_loader = get_data_loader(data_path="test.jsonl",

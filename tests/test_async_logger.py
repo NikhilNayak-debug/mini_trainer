@@ -13,7 +13,7 @@ import time
 from unittest.mock import patch
 import pytest
 
-from async_structured_logger import AsyncStructuredLogger
+from mini_trainer.async_structured_logger import AsyncStructuredLogger
 
 
 class TestAsyncStructuredLogger:

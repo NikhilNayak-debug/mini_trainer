@@ -8,7 +8,7 @@ from typing import Protocol
 
 from tqdm import tqdm
 
-from utils import log_rank_0, check_distributed_is_synchronized
+from .utils import log_rank_0, check_distributed_is_synchronized
 
 class SVDDictBase(t.TypedDict):
     U_high: torch.Tensor

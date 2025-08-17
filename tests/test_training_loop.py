@@ -19,8 +19,8 @@ import torch.nn as nn
 import pytest
 import numpy as np
 
-from train import train, main, LogLevelEnum
-from batch_metrics import BatchMetrics
+from mini_trainer.train import train, main, LogLevelEnum
+from mini_trainer.batch_metrics import BatchMetrics
 
 
 class TestTrainFunction:
@@ -87,10 +87,10 @@ class TestTrainFunction:
     @patch('torch.distributed.get_world_size', return_value=2)
     @patch('torch.distributed.get_rank', return_value=0)
     @patch('torch.distributed.all_reduce')
-    @patch('train.dist.get_rank', return_value=0)
-    @patch('train.AsyncStructuredLogger')
-    @patch('train.take_gradient_step')
-    @patch('train.save_model')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.take_gradient_step')
+    @patch('mini_trainer.train.save_model')
     @patch('torch.cuda.reset_peak_memory_stats')
     @patch('torch.cuda.empty_cache')
     @patch('torch.cuda.max_memory_allocated', return_value=1e9)
@@ -109,7 +109,7 @@ class TestTrainFunction:
         
         with tempfile.TemporaryDirectory() as temp_dir:
             # Run training for a few steps
-            with patch('train.iter', side_effect=lambda x: iter(x)):
+            with patch('mini_trainer.train.iter', side_effect=lambda x: iter(x)):
                 # Limit iterations by making data_loader finite
                 mock_data_loader.__iter__ = lambda self: iter([
                     [{'input_ids': torch.tensor([[1, 2]]),
@@ -144,10 +144,10 @@ class TestTrainFunction:
     @patch('torch.distributed.get_world_size', return_value=2)
     @patch('torch.distributed.get_rank', return_value=0)
     @patch('torch.distributed.all_reduce')
-    @patch('train.dist.get_rank', return_value=0)
-    @patch('train.AsyncStructuredLogger')
-    @patch('train.take_gradient_step')
-    @patch('train.save_model')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.take_gradient_step')
+    @patch('mini_trainer.train.save_model')
     @patch('torch.cuda.reset_peak_memory_stats')
     @patch('torch.cuda.empty_cache')
     @patch('torch.distributed.barrier')
@@ -200,9 +200,9 @@ class TestTrainFunction:
     @patch('torch.distributed.get_world_size', return_value=4)
     @patch('torch.distributed.get_rank', return_value=1)
     @patch('torch.distributed.all_reduce')
-    @patch('train.dist.get_rank', return_value=1)
-    @patch('train.AsyncStructuredLogger')
-    @patch('train.take_gradient_step')
+    @patch('mini_trainer.train.dist.get_rank', return_value=1)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.take_gradient_step')
     @patch('torch.cuda.reset_peak_memory_stats')
     @patch('torch.cuda.empty_cache')
     @patch('torch.distributed.barrier')
@@ -251,13 +251,13 @@ class TestTrainFunction:
 class TestMainCLI:
     """Test suite for the main CLI function."""
     
-    @patch('train.init_distributed_environment')
-    @patch('train.setup_logger')
-    @patch('train.setup_model')
-    @patch('train.setup_training_components')
-    @patch('train.get_data_loader')
-    @patch('train.train')
-    @patch('train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.init_distributed_environment')
+    @patch('mini_trainer.train.setup_logger')
+    @patch('mini_trainer.train.setup_model')
+    @patch('mini_trainer.train.setup_training_components')
+    @patch('mini_trainer.train.get_data_loader')
+    @patch('mini_trainer.train.train')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
     @patch.dict(os.environ, {'WORLD_SIZE': '1'})
     def test_main_basic(self, mock_rank, mock_train_fn, mock_get_loader,
                         mock_setup_components, mock_setup_model,
@@ -305,13 +305,13 @@ class TestMainCLI:
         # Verify training was started
         mock_train_fn.assert_called_once()
     
-    @patch('train.init_distributed_environment')
-    @patch('train.setup_logger')
-    @patch('train.setup_model')
-    @patch('train.setup_training_components')
-    @patch('train.get_data_loader')
-    @patch('train.train')
-    @patch('train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.init_distributed_environment')
+    @patch('mini_trainer.train.setup_logger')
+    @patch('mini_trainer.train.setup_model')
+    @patch('mini_trainer.train.setup_training_components')
+    @patch('mini_trainer.train.get_data_loader')
+    @patch('mini_trainer.train.train')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
     @patch.dict(os.environ, {'WORLD_SIZE': '1'})
     @patch('builtins.open', new_callable=mock_open)
     def test_main_saves_parameters(self, mock_file, mock_rank, mock_train_fn,
@@ -353,17 +353,17 @@ class TestMainCLI:
             assert params['use_liger_kernels'] == True
             assert params['orthogonal_subspace_learning'] == True
     
-    @patch('train.init_distributed_environment')
-    @patch('train.dist.get_rank', return_value=1)
+    @patch('mini_trainer.train.init_distributed_environment')
+    @patch('mini_trainer.train.dist.get_rank', return_value=1)
     @patch.dict(os.environ, {'WORLD_SIZE': '2'})
     def test_main_non_rank_0_no_params_save(self, mock_rank, mock_init_dist):
         """Test that non-rank-0 processes don't save parameters."""
         with patch('builtins.open', new_callable=mock_open) as mock_file:
-            with patch('train.setup_logger'):
-                with patch('train.setup_model') as mock_setup_model:
-                    with patch('train.setup_training_components') as mock_setup_comp:
-                        with patch('train.get_data_loader'):
-                            with patch('train.train'):
+            with patch('mini_trainer.train.setup_logger'):
+                with patch('mini_trainer.train.setup_model') as mock_setup_model:
+                    with patch('mini_trainer.train.setup_training_components') as mock_setup_comp:
+                        with patch('mini_trainer.train.get_data_loader'):
+                            with patch('mini_trainer.train.train'):
                                 mock_setup_model.return_value = MagicMock()
                                 mock_setup_comp.return_value = (MagicMock(), MagicMock(), MagicMock())
                                 
@@ -452,8 +452,8 @@ class TestErrorHandling:
     @patch('torch.distributed.get_world_size', return_value=1)
     @patch('torch.distributed.get_rank', return_value=0)
     @patch('torch.distributed.all_reduce')
-    @patch('train.dist.get_rank', return_value=0)
-    @patch('train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
     @patch('torch.cuda.reset_peak_memory_stats')
     @patch('torch.cuda.empty_cache')
     @patch('torch.distributed.barrier')
@@ -487,7 +487,7 @@ class TestErrorHandling:
         
         with tempfile.TemporaryDirectory() as temp_dir:
             # Should handle minimal batch without crashing
-            with patch('train.take_gradient_step') as mock_grad_step:
+            with patch('mini_trainer.train.take_gradient_step') as mock_grad_step:
                 mock_grad_step.return_value = torch.tensor(1.0)
                 
                 train(
@@ -512,8 +512,8 @@ class TestMemoryManagement:
     @patch('torch.distributed.get_world_size', return_value=1)
     @patch('torch.distributed.get_rank', return_value=0)
     @patch('torch.distributed.all_reduce')
-    @patch('train.dist.get_rank', return_value=0)
-    @patch('train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
     @patch('torch.cuda.reset_peak_memory_stats')
     @patch('torch.cuda.empty_cache')
     @patch('torch.cuda.max_memory_allocated', return_value=2e9)
@@ -543,7 +543,7 @@ class TestMemoryManagement:
             'batch_num_loss_counted_tokens': 2
         }]])
         
-        with patch('train.take_gradient_step') as mock_grad_step:
+        with patch('mini_trainer.train.take_gradient_step') as mock_grad_step:
             mock_grad_step.return_value = torch.tensor(1.0)
             
             with tempfile.TemporaryDirectory() as temp_dir:

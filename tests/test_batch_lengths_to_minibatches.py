@@ -11,8 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import pytest
 import time
-from sampler import batch_lengths_to_minibatches
-from batch_packer import batch_lengths_to_minibatches_lpt
+from mini_trainer.sampler import batch_lengths_to_minibatches
 
 
 class TestBatchLengthsToMinibatches:
