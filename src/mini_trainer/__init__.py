@@ -6,6 +6,7 @@ including Orthogonal Subspace Fine Tuning (OSFT).
 
 __version__ = "0.1.0"
 
+from . import api_train
 from . import async_structured_logger
 from . import batch_metrics
 from . import batch_packer
@@ -17,7 +18,11 @@ from . import svd_utils
 from . import train
 from . import utils
 
+# Export main API functions for convenience
+from .api_train import run_training, TorchrunArgs, TrainingArgs, LogLevel
+
 __all__ = [
+    "api_train",
     "async_structured_logger",
     "batch_metrics", 
     "batch_packer",
@@ -28,4 +33,10 @@ __all__ = [
     "svd_utils",
     "train",
     "utils",
+    # Main API exports
+    "run_training",
+    "TorchrunArgs",
+    "TrainingArgs",
+    "train_model",
+    "LogLevel",
 ]

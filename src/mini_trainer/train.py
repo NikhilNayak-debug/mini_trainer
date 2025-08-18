@@ -6,14 +6,14 @@ import json
 
 from typer import Typer, Option
 
-from .async_structured_logger import AsyncStructuredLogger
+from mini_trainer.async_structured_logger import AsyncStructuredLogger
 import torch
 import torch.distributed as dist
 
-from .batch_metrics import BatchMetrics
-from .sampler import get_data_loader
-from .setup_model_for_training import setup_model, setup_training_components
-from .utils import init_distributed_environment, log_rank_0, setup_logger
+from mini_trainer.batch_metrics import BatchMetrics
+from mini_trainer.sampler import get_data_loader
+from mini_trainer.setup_model_for_training import setup_model, setup_training_components
+from mini_trainer.utils import init_distributed_environment, log_rank_0, setup_logger
 
 app = Typer(
     pretty_exceptions_show_locals=False,  # Hide local variables in tracebacks

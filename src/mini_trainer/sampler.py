@@ -31,7 +31,7 @@ from torch.utils.data import Sampler, Dataset, DataLoader
 import torch.distributed as dist
 import numpy as np
 from datasets import load_dataset
-from .batch_packer import batch_lengths_to_minibatches_lpt
+from mini_trainer.batch_packer import batch_lengths_to_minibatches_lpt
 
 def reset_minibatches(num_ranks: int):
     return [[] for _ in range(num_ranks)], np.zeros(num_ranks)

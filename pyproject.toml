@@ -61,7 +61,7 @@ Repository = "https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer"
 Issues = "https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer/issues"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["mini_trainer*"]
 
 [tool.setuptools.package-data]
