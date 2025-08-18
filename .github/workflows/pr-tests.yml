@@ -1,0 +1,205 @@
+name: PR Tests
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test-py312:
+    name: Python 3.12 Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies with uv
+      run: |
+        uv sync
+        uv pip install tox tox-uv
+    
+    - name: Display Python and package information
+      run: |
+        python --version
+        uv run tox --version
+        which python
+    
+    - name: Run Python 3.12 non-GPU tests
+      run: |
+        uv run tox -e test-non-gpu-py312
+
+  test-py311:
+    name: Python 3.11 Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies with uv
+      run: |
+        uv sync
+        uv pip install tox tox-uv
+    
+    - name: Display Python and package information
+      run: |
+        python --version
+        uv run tox --version
+        which python
+    
+    - name: Run Python 3.11 non-GPU tests
+      run: |
+        uv run tox -e test-non-gpu-py311
+
+  test-coverage:
+    name: Test with Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies with uv
+      run: |
+        uv sync
+        uv pip install tox tox-uv
+    
+    - name: Display Python and package information
+      run: |
+        python --version
+        uv run tox --version
+        which python
+    
+    - name: Run tests with coverage
+      run: |
+        uv run tox -e test-non-gpu-coverage
+    
+    - name: Upload HTML coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-html-report
+        path: htmlcov/
+        retention-days: 30
+    
+    - name: Upload coverage XML report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-xml-report
+        path: coverage.xml
+        retention-days: 30
+
+  format-check:
+    name: Format Check (Non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # This makes the job non-required
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies with uv
+      run: |
+        uv sync
+        uv pip install tox tox-uv
+    
+    - name: Check code formatting
+      run: |
+        uv run tox -e format-check
+
+  lint:
+    name: Linting (Non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # This makes the job non-required
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies with uv
+      run: |
+        uv sync
+        uv pip install tox tox-uv
+    
+    - name: Run linting checks
+      run: |
+        uv run tox -e lint
+
+  # Summary job to ensure required tests pass
+  tests-passed:
+    name: All Required Tests Passed
+    needs: [test-py312, test-py311, test-coverage]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          if [[ "${{ needs.test-py312.result }}" != "success" || \
+                "${{ needs.test-py311.result }}" != "success" || \
+                "${{ needs.test-coverage.result }}" != "success" ]]; then
+            echo "One or more required tests failed!"
+            echo "Python 3.12 tests: ${{ needs.test-py312.result }}"
+            echo "Python 3.11 tests: ${{ needs.test-py311.result }}"
+            echo "Coverage tests: ${{ needs.test-coverage.result }}"
+            exit 1
+          else
+            echo "All required tests passed successfully!"
+            echo "Format check: ${{ needs.format-check.result }} (non-blocking)"
+            echo "Linting: ${{ needs.lint.result }} (non-blocking)"
+          fi

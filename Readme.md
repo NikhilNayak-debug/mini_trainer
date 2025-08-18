@@ -1,5 +1,7 @@
 # Mini Trainer
 
+[![PR Tests](https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer/actions/workflows/pr-tests.yml)
+
 MiniTrainer is a small form factor and extremely efficient training library for models up to 70B parameters on a single 8xA100/H100 node, although it supports multinode training if your infrastructure has ROCE/Infiniband.
 
 ### Features:
