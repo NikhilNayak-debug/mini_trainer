@@ -381,9 +381,7 @@ class TestGetDataLoader:
         
         assert loader is not None
         assert loader.batch_size == 4
-        # In test environments, num_workers is limited to 2 for stability
-        assert loader.num_workers <= 4  # May be reduced in test environments
-        assert loader.num_workers >= 0  # But should be non-negative
+        assert loader.num_workers == 4
     
     def test_get_data_loader_with_custom_params(self, temp_data_file):
         """Test data loader with custom parameters."""

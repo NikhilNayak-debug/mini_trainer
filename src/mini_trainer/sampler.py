@@ -287,13 +287,6 @@ def get_data_loader(**kwargs):
     dummy_sample = kwargs.get('dummy_sample', None)
     num_workers = kwargs.get('num_workers', 4)
     
-    # In test environments or when debugging, it's safer to use fewer workers
-    # to avoid segmentation faults from multiprocessing issues
-    import os
-    if os.environ.get('PYTEST_CURRENT_TEST') or os.environ.get('TOX_ENV_NAME'):
-        # Running in test environment, use fewer workers for stability
-        num_workers = min(num_workers, 2)
-    
     return DataLoader(dataset, 
                       batch_size, 
                       sampler=InfiniteSampler(len(dataset), seed=seed),

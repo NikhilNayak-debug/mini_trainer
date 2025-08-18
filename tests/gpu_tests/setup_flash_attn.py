@@ -3,6 +3,7 @@
 
 This ensures torch and ninja are installed before attempting to build flash-attn.
 """
+import argparse
 import subprocess
 import sys
 import importlib.util
@@ -14,39 +15,41 @@ def is_package_installed(package_name):
     return spec is not None
 
 
-def install_flash_attn():
-    """Install flash-attn with proper dependency order."""
+def install_flash_attn(strict=False):
+    """Install flash-attn with proper dependency order.
+    
+    Args:
+        strict: If True, exit with error code when installation fails.
+                If False, exit with success even on failure (default).
+    """
     print("=" * 60)
     print("Setting up flash-attn for GPU tests")
+    print(f"Strict mode: {strict}")
     print("=" * 60)
-    
-    # Check if torch is installed
-    if not is_package_installed("torch"):
-        print("❌ PyTorch must be installed first")
-        print("   Run: uv sync")
-        return False
-    
-    # Check if ninja is installed
-    if not is_package_installed("ninja"):
-        print("⚠️  Ninja not installed, installing...")
+
+    # Check if flash-attn is already installed and uninstall it
+    if is_package_installed("flash_attn"):
+        print("⚠️  flash-attn is already installed, uninstalling first...")
         result = subprocess.run(
-            ["uv", "pip", "install", "ninja"],
+            ["uv", "pip", "uninstall", "flash-attn"],
             capture_output=True,
             text=True
         )
         if result.returncode != 0:
-            print(f"❌ Failed to install ninja: {result.stderr}")
-            return False
-        print("✓ Ninja installed")
-    
-    # Check if flash-attn is already installed
-    if is_package_installed("flash_attn"):
-        print("✓ flash-attn is already installed")
-        return True
+            print(f"❌ Failed to uninstall flash-attn: {result.stderr}")
+            return False if strict else True
+        print("✓ flash-attn uninstalled")
+
+    # Check if torch is installed
+    if not is_package_installed("torch"):
+        print("❌ PyTorch must be installed first")
+        print("   In tox: Add 'torch>=2.6,<2.8' to deps section")
+        print("   In uv: Run 'uv sync'")
+        return False if strict else True
     
     # Install build dependencies for flash-attn
     print("\nInstalling build dependencies for flash-attn...")
-    build_deps = ["packaging", "psutil", "einops"]
+    build_deps = ["packaging", "psutil", "einops", "ninja"]
     for dep in build_deps:
         if not is_package_installed(dep):
             print(f"  Installing {dep}...")
@@ -69,13 +72,25 @@ def install_flash_attn():
     
     if result.returncode != 0:
         print("⚠️  Failed to install flash-attn")
-        print("   GPU tests will run with eager attention instead")
-        return False
+        if strict:
+            print("   ❌ Exiting with error (strict mode enabled)")
+        else:
+            print("   ✓ Continuing anyway (strict mode disabled)")
+            print("   GPU tests will run with eager attention instead")
+        return False if strict else True
     
     print("✓ flash-attn installed successfully")
     return True
 
 
 if __name__ == "__main__":
-    success = install_flash_attn()
+    parser = argparse.ArgumentParser(description="Install flash-attn for GPU tests")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit with error code if flash-attn installation fails (default: False)"
+    )
+    args = parser.parse_args()
+    
+    success = install_flash_attn(strict=args.strict)
     sys.exit(0 if success else 1)

@@ -14,12 +14,6 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "gpu: marks tests as requiring GPU (deselect with '-m \"not gpu\"')"
     )
-    config.addinivalue_line(
-        "markers", "multigpu: marks tests as requiring multiple GPUs"
-    )
-    config.addinivalue_line(
-        "markers", "overfitting: marks tests for overfitting behavior analysis"
-    )
 
 
 @pytest.fixture(scope="session")
