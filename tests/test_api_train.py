@@ -112,6 +112,229 @@ class TestStreamablePopen:
             assert popen.poll() != 0
 
 
+    def test_streamable_popen_stdout_capture(self):
+        """Test StreamablePopen captures stdout correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "stdout_test.log"
+            command = ["python", "-c", "print('Hello stdout'); print('Line 2 stdout')"]
+            
+            popen = StreamablePopen(str(log_file), command)
+            popen.listen()
+            
+            # Check log file contains stdout
+            assert log_file.exists()
+            with open(log_file) as f:
+                content = f.read()
+                assert "Hello stdout" in content
+                assert "Line 2 stdout" in content
+            
+            assert popen.poll() == 0
+
+    def test_streamable_popen_stderr_capture(self):
+        """Test StreamablePopen captures stderr correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "stderr_test.log"
+            command = ["python", "-c", "import sys; print('Error message', file=sys.stderr); print('Another error', file=sys.stderr)"]
+            
+            popen = StreamablePopen(str(log_file), command)
+            popen.listen()
+            
+            # Check log file contains stderr
+            assert log_file.exists()
+            with open(log_file) as f:
+                content = f.read()
+                assert "Error message" in content
+                assert "Another error" in content
+            
+            assert popen.poll() == 0
+
+    def test_streamable_popen_mixed_output(self):
+        """Test StreamablePopen captures both stdout and stderr."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "mixed_test.log"
+            command = ["python", "-c", 
+                      "import sys; "
+                      "print('stdout line 1'); "
+                      "print('stderr line 1', file=sys.stderr); "
+                      "print('stdout line 2'); "
+                      "print('stderr line 2', file=sys.stderr)"]
+            
+            popen = StreamablePopen(str(log_file), command)
+            popen.listen()
+            
+            # Check log file contains both outputs
+            assert log_file.exists()
+            with open(log_file) as f:
+                content = f.read()
+                assert "stdout line 1" in content
+                assert "stdout line 2" in content
+                assert "stderr line 1" in content
+                assert "stderr line 2" in content
+            
+            assert popen.poll() == 0
+
+    def test_streamable_popen_stdout_realtime(self):
+        """Test StreamablePopen captures stdout in real-time."""
+        import time
+        import threading
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "stdout_realtime_test.log"
+            # Script that outputs "1", "2", "3" with delays
+            command = ["python", "-c", 
+                      "import time, sys; "
+                      "print('1', flush=True); "
+                      "time.sleep(0.5); "
+                      "print('2', flush=True); "
+                      "time.sleep(0.5); "
+                      "print('3', flush=True)"]
+            
+            popen = StreamablePopen(str(log_file), command)
+            
+            # Start listening in a separate thread
+            listen_thread = threading.Thread(target=popen.listen)
+            listen_thread.start()
+            
+            # Check that "1" appears first
+            time.sleep(0.2)  # Give it time to start and print "1"
+            with open(log_file) as f:
+                content = f.read()
+                assert "1" in content
+                assert "2" not in content
+                assert "3" not in content
+            
+            # Check that "2" appears next
+            time.sleep(0.5)  # Wait for "2" to be printed
+            with open(log_file) as f:
+                content = f.read()
+                assert "1" in content
+                assert "2" in content
+                assert "3" not in content
+            
+            # Check that "3" appears last
+            time.sleep(0.5)  # Wait for "3" to be printed
+            with open(log_file) as f:
+                content = f.read()
+                assert "1" in content
+                assert "2" in content
+                assert "3" in content
+            
+            listen_thread.join()
+            assert popen.poll() == 0
+
+    def test_streamable_popen_stderr_realtime(self):
+        """Test StreamablePopen captures stderr in real-time."""
+        import time
+        import threading
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "stderr_realtime_test.log"
+            # Script that outputs "1", "2", "3" to stderr with delays
+            command = ["python", "-c", 
+                      "import time, sys; "
+                      "print('1', file=sys.stderr, flush=True); "
+                      "time.sleep(0.5); "
+                      "print('2', file=sys.stderr, flush=True); "
+                      "time.sleep(0.5); "
+                      "print('3', file=sys.stderr, flush=True)"]
+            
+            popen = StreamablePopen(str(log_file), command)
+            
+            # Start listening in a separate thread
+            listen_thread = threading.Thread(target=popen.listen)
+            listen_thread.start()
+            
+            # Check that "1" appears first
+            time.sleep(0.2)  # Give it time to start and print "1"
+            with open(log_file) as f:
+                content = f.read()
+                assert "1" in content
+                assert "2" not in content
+                assert "3" not in content
+            
+            # Check that "2" appears next
+            time.sleep(0.5)  # Wait for "2" to be printed
+            with open(log_file) as f:
+                content = f.read()
+                assert "1" in content
+                assert "2" in content
+                assert "3" not in content
+            
+            # Check that "3" appears last
+            time.sleep(0.5)  # Wait for "3" to be printed
+            with open(log_file) as f:
+                content = f.read()
+                assert "1" in content
+                assert "2" in content
+                assert "3" in content
+            
+            listen_thread.join()
+            assert popen.poll() == 0
+
+    def test_streamable_popen_mixed_realtime(self):
+        """Test StreamablePopen captures mixed stdout/stderr in real-time."""
+        import time
+        import threading
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_file = Path(tmpdir) / "mixed_realtime_test.log"
+            # Script that alternates between stdout and stderr with delays
+            command = ["python", "-c", 
+                      "import time, sys; "
+                      "print('stdout-1', flush=True); "
+                      "time.sleep(0.3); "
+                      "print('stderr-1', file=sys.stderr, flush=True); "
+                      "time.sleep(0.3); "
+                      "print('stdout-2', flush=True); "
+                      "time.sleep(0.3); "
+                      "print('stderr-2', file=sys.stderr, flush=True)"]
+            
+            popen = StreamablePopen(str(log_file), command)
+            
+            # Start listening in a separate thread
+            listen_thread = threading.Thread(target=popen.listen)
+            listen_thread.start()
+            
+            # Check first stdout appears
+            time.sleep(0.15)
+            with open(log_file) as f:
+                content = f.read()
+                assert "stdout-1" in content
+                assert "stderr-1" not in content
+                assert "stdout-2" not in content
+                assert "stderr-2" not in content
+            
+            # Check first stderr appears
+            time.sleep(0.3)
+            with open(log_file) as f:
+                content = f.read()
+                assert "stdout-1" in content
+                assert "stderr-1" in content
+                assert "stdout-2" not in content
+                assert "stderr-2" not in content
+            
+            # Check second stdout appears
+            time.sleep(0.3)
+            with open(log_file) as f:
+                content = f.read()
+                assert "stdout-1" in content
+                assert "stderr-1" in content
+                assert "stdout-2" in content
+                assert "stderr-2" not in content
+            
+            # Check second stderr appears
+            time.sleep(0.3)
+            with open(log_file) as f:
+                content = f.read()
+                assert "stdout-1" in content
+                assert "stderr-1" in content
+                assert "stdout-2" in content
+                assert "stderr-2" in content
+            
+            listen_thread.join()
+            assert popen.poll() == 0
+
+
 class TestRunTraining:
     """Test the run_training function."""
     
@@ -121,7 +344,7 @@ class TestRunTraining:
         mock_popen = MagicMock()
         mock_popen.poll.return_value = 0  # Success
         mock_popen_class.return_value = mock_popen
-        
+ 
         with tempfile.TemporaryDirectory() as tmpdir:
             torch_args = TorchrunArgs(
                 nnodes=2,
@@ -144,9 +367,9 @@ class TestRunTraining:
                 orthogonal_subspace_learning=True,
                 min_samples_per_checkpoint=5000
             )
-            
+ 
             run_training(torch_args, train_args)
-            
+ 
             # Check that StreamablePopen was called with correct arguments
             assert mock_popen_class.called
             call_args = mock_popen_class.call_args
