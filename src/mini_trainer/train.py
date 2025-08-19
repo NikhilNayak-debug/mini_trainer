@@ -361,7 +361,7 @@ def main(
     output_dir: Annotated[str, Option(help="Directory to save checkpoints and logs (required)")] = ...,
     logging_level: Annotated[LogLevelEnum, Option(help="Logging level", case_sensitive=False)] = LogLevelEnum.INFO,
     min_samples_per_checkpoint: Annotated[int | None, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = None,
-    use_infinite_sampler: Annotated[bool, Option(help="Whether to use an infinite sampler")] = True,
+
     # Training mode parameters
     training_mode: Annotated[TrainingMode, Option(help="Training mode: epoch, step, token, or infinite", case_sensitive=False)] = TrainingMode.INFINITE,  # todo: change this
     max_epochs: Annotated[int, Option(help="Maximum number of epochs (for epoch mode)")] = 0,
@@ -391,7 +391,6 @@ def main(
             "output_dir": output_dir,
             "logging_level": logging_level.value,
             "min_samples_per_checkpoint": min_samples_per_checkpoint,
-            "use_infinite_sampler": use_infinite_sampler,
             "training_mode": training_mode.value,
             "max_epochs": max_epochs,
             "max_steps": max_steps,
@@ -425,7 +424,6 @@ def main(
         batch_size=batch_size,
         max_tokens_per_gpu=max_tokens_per_gpu,
         seed=seed,
-        use_infinite_sampler=use_infinite_sampler,
     )
     
     # Calculate number of training steps based on training mode
@@ -435,7 +433,6 @@ def main(
         max_epochs=max_epochs,
         max_steps=max_steps,
         max_tokens=max_tokens,
-        use_infinite_sampler=use_infinite_sampler,
     )
     
     log_rank_0(f"Calculated num_training_steps: {num_training_steps}")

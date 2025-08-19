@@ -59,8 +59,7 @@ class TestDataLoaderBatchCount:
                 data_path=data_path,
                 batch_size=4,
                 max_tokens_per_gpu=1000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Count batches by iterating through the data loader
@@ -92,8 +91,7 @@ class TestDataLoaderBatchCount:
                 data_path=data_path,
                 batch_size=2,
                 max_tokens_per_gpu=1000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Count batches for multiple epochs
@@ -160,8 +158,7 @@ class TestDatasetTokenCount:
                 data_path=data_path,
                 batch_size=1,  # Use batch size 1 to make counting easier
                 max_tokens_per_gpu=10000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Count total loss tokens
@@ -195,8 +192,7 @@ class TestDatasetTokenCount:
                 data_path=data_path,
                 batch_size=2,
                 max_tokens_per_gpu=10000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Track tokens per batch
@@ -237,8 +233,7 @@ class TestDatasetTokenCount:
                 data_path=data_path,
                 batch_size=2,
                 max_tokens_per_gpu=10000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Gather comprehensive metrics

@@ -62,9 +62,6 @@ class TrainingArgs:
     logging_level: LogLevelEnum = LogLevelEnum.INFO
     min_samples_per_checkpoint: Optional[int] = None
     
-    # Sampling configuration
-    use_infinite_sampler: bool = True
-    
     # Training mode and stopping criteria
     training_mode: TrainingMode = TrainingMode.INFINITE
     max_epochs: int = 0  # For EPOCH mode

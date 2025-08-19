@@ -51,8 +51,7 @@ class TestCalculateTrainingSteps:
         """Test that INFINITE mode returns None for training steps."""
         result = calculate_num_training_steps(
             training_mode=TrainingMode.INFINITE,
-            data_loader=None,
-            use_infinite_sampler=True
+            data_loader=None
         )
         assert result is None
     
@@ -77,8 +76,7 @@ class TestCalculateTrainingSteps:
                 data_path=data_path,
                 batch_size=4,
                 max_tokens_per_gpu=1000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Reset data loader for fresh iteration
@@ -87,8 +85,7 @@ class TestCalculateTrainingSteps:
             result = calculate_num_training_steps(
                 training_mode=TrainingMode.EPOCH,
                 data_loader=data_loader,
-                max_epochs=3,
-                use_infinite_sampler=False
+                max_epochs=3
             )
             
             # Should be num_batches * max_epochs
@@ -112,8 +109,7 @@ class TestCalculateTrainingSteps:
                 data_path=data_path,
                 batch_size=2,
                 max_tokens_per_gpu=1000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
             # Reset data loader
@@ -122,8 +118,7 @@ class TestCalculateTrainingSteps:
             result = calculate_num_training_steps(
                 training_mode=TrainingMode.TOKEN,
                 data_loader=data_loader,
-                max_tokens=500,
-                use_infinite_sampler=False
+                max_tokens=500
             )
             
             # Should calculate based on average tokens per batch
@@ -133,23 +128,13 @@ class TestCalculateTrainingSteps:
         finally:
             os.unlink(data_path)
     
-    def test_calculate_steps_with_infinite_sampler(self):
-        """Test that appropriate modes return None with infinite sampler."""
-        # EPOCH mode with infinite sampler
+    def test_calculate_steps_with_infinite_mode(self):
+        """Test that INFINITE mode returns None for training steps."""
+        # INFINITE mode should always return None
         result = calculate_num_training_steps(
-            training_mode=TrainingMode.EPOCH,
+            training_mode=TrainingMode.INFINITE,
             data_loader=None,
-            max_epochs=5,
-            use_infinite_sampler=True
-        )
-        assert result is None
-        
-        # TOKEN mode with infinite sampler
-        result = calculate_num_training_steps(
-            training_mode=TrainingMode.TOKEN,
-            data_loader=None,
-            max_tokens=10000,
-            use_infinite_sampler=True
+            max_epochs=5
         )
         assert result is None
 
@@ -271,11 +256,10 @@ class TestDatasetMetrics:
                 data_path=data_path,
                 batch_size=1,
                 max_tokens_per_gpu=1000,
-                seed=42,
-                use_infinite_sampler=False
+                seed=42
             )
             
-            metrics = get_dataset_metrics(data_loader, use_infinite_sampler=False)
+            metrics = get_dataset_metrics(data_loader)
             
             assert metrics['num_batches'] > 0
             assert metrics['total_samples'] == 2

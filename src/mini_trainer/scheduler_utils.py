@@ -19,7 +19,6 @@ def calculate_num_training_steps(
     max_epochs: int = 0,
     max_steps: int = 0,
     max_tokens: int = 0,
-    use_infinite_sampler: bool = True,
 ) -> Optional[int]:
     """
     Calculate the number of training steps based on the training mode.
@@ -30,7 +29,6 @@ def calculate_num_training_steps(
         max_epochs: Maximum epochs for EPOCH mode
         max_steps: Maximum steps for STEP mode
         max_tokens: Maximum tokens for TOKEN mode
-        use_infinite_sampler: Whether using infinite sampler
     
     Returns:
         Number of training steps, or None for INFINITE mode or when it can't be calculated
@@ -45,10 +43,6 @@ def calculate_num_training_steps(
         return max_steps
     
     elif training_mode == TrainingMode.EPOCH:
-        if use_infinite_sampler:
-            logger.warning("Cannot calculate training steps for EPOCH mode with infinite sampler")
-            return None
-        
         # Count the number of batches in one epoch
         try:
             # Try to get length directly if available
@@ -69,10 +63,6 @@ def calculate_num_training_steps(
         return num_training_steps
     
     elif training_mode == TrainingMode.TOKEN:
-        if use_infinite_sampler:
-            logger.warning("Cannot calculate training steps for TOKEN mode with infinite sampler")
-            return None
-        
         # Calculate average tokens per batch
         logger.info("Calculating average tokens per batch...")
         batch_token_counts = []
@@ -108,13 +98,12 @@ def calculate_num_training_steps(
         raise ValueError(f"Unknown training mode: {training_mode}")
 
 
-def get_dataset_metrics(data_loader, use_infinite_sampler: bool = True) -> Dict[str, Any]:
+def get_dataset_metrics(data_loader) -> Dict[str, Any]:
     """
     Get comprehensive metrics from the data loader for scheduler configuration.
     
     Args:
         data_loader: The data loader to analyze
-        use_infinite_sampler: Whether using infinite sampler
     
     Returns:
         Dictionary with dataset metrics
@@ -126,10 +115,6 @@ def get_dataset_metrics(data_loader, use_infinite_sampler: bool = True) -> Dict[
         'avg_tokens_per_batch': 0,
         'batch_token_counts': []
     }
-    
-    if use_infinite_sampler:
-        logger.warning("Cannot get complete dataset metrics with infinite sampler")
-        return metrics
     
     try:
         for batch in data_loader:

@@ -62,7 +62,6 @@ class TestDataclasses:
         assert args.output_dir == "./output"
         assert args.logging_level == LogLevelEnum.INFO
         assert args.min_samples_per_checkpoint is None
-        assert args.use_infinite_sampler is True
         assert args.training_mode == TrainingMode.INFINITE
         assert args.max_epochs == 0
         assert args.max_steps == 0
@@ -644,7 +643,6 @@ sys.exit(1)
                 output_dir=tmpdir,
                 use_liger_kernels=True,
                 orthogonal_subspace_learning=True,
-                use_infinite_sampler=True,
                 checkpoint_at_epoch=True,
                 save_final_checkpoint=True
             )
@@ -662,7 +660,6 @@ sys.exit(1)
                 # Verify all boolean flags are present
                 assert "--use-liger-kernels" in command
                 assert "--orthogonal-subspace-learning" in command
-                assert "--use-infinite-sampler" in command
                 assert "--checkpoint-at-epoch" in command
                 assert "--save-final-checkpoint" in command
     
@@ -674,7 +671,6 @@ sys.exit(1)
                 output_dir=tmpdir,
                 use_liger_kernels=False,
                 orthogonal_subspace_learning=False,
-                use_infinite_sampler=False,
                 checkpoint_at_epoch=False,
                 save_final_checkpoint=False
             )
@@ -692,8 +688,6 @@ sys.exit(1)
                 # Verify boolean flags are NOT present when False
                 assert "--use-liger-kernels" not in command
                 assert "--orthogonal-subspace-learning" not in command
-                # Note: use_infinite_sampler defaults to True, so we set it to False
-                assert "--use-infinite-sampler" not in command
                 assert "--checkpoint-at-epoch" not in command
                 assert "--save-final-checkpoint" not in command
     
@@ -822,7 +816,6 @@ parser.add_argument("--max-steps", type=int)
 parser.add_argument("--max-tokens", type=int)
 parser.add_argument("--use-liger-kernels", action="store_true")
 parser.add_argument("--orthogonal-subspace-learning", action="store_true")
-parser.add_argument("--use-infinite-sampler", action="store_true")
 parser.add_argument("--checkpoint-at-epoch", action="store_true")
 parser.add_argument("--save-final-checkpoint", action="store_true")
 
@@ -853,7 +846,6 @@ validation_results.append(("seed", args.seed == 999))
 # Check boolean flags
 validation_results.append(("liger", args.use_liger_kernels == True))
 validation_results.append(("osft", args.orthogonal_subspace_learning == True))
-validation_results.append(("infinite", args.use_infinite_sampler == False))
 validation_results.append(("epoch_ckpt", args.checkpoint_at_epoch == True))
 validation_results.append(("final_ckpt", args.save_final_checkpoint == True))
 

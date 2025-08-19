@@ -4,8 +4,8 @@ designed for efficient distributed training of sequence models, particularly
 large language models, on multiple GPUs.
 
 Key Features:
-- Infinite Sampler: Provides an endless stream of shuffled data indices,
-  suitable for training for a fixed number of steps rather than epochs.
+- Epoch-based Sampler: Provides shuffled data indices for each epoch,
+  suitable for both finite and infinite training modes.
 - Initial Batching: Groups samples into initial batches based on a fixed number
   of samples per batch.
 - Dynamic Minibatching for Distributed Training: Takes the initial batches and
@@ -139,7 +139,7 @@ class EpochSampler(Sampler):
 
     def generate_samples(self):
         g = torch.Generator()
-        g.manual_seed(self.seed)
+        g.manual_seed(self.seed + self._epoch)
         samples = torch.randperm(self.len_data, generator=g).tolist()
         return samples 
 
@@ -150,52 +150,7 @@ class EpochSampler(Sampler):
     def __len__(self):
         return self.len_data
 
-        
-class InfiniteSampler(Sampler):
-    """Infinitely yields shuffled dataset indices. Crucially, in distributed
-    training, it provides the *same* index sequence to all ranks.
 
-    Reshuffles indices using a seed incremented per cycle. The actual distribution
-    of samples/indices to specific ranks must be handled later (e.g., by a collate_fn).
-
-    Args:
-        len_data: The size of the dataset.
-        seed: Initial random seed for shuffling (incremented each cycle).
-    """
-    def __init__(self, len_data, seed: int = 37, epoch: int = 0):
-        self.len_data = len_data
-        self.seed = seed
-        self._epoch = epoch
-
-    @property
-    def completed_epochs(self) -> int:
-        """
-        Returns the total number of epochs this model has seen.
-        """
-        return self._epoch
-
-    def set_epoch(self, epoch: int):
-        self._epoch = epoch
-
-
-    def __iter__(self):
-        """Yields an infinite stream of shuffled dataset indices."""
-        epoch = 0 
-        while True:
-            g = torch.Generator()
-            g.manual_seed(self.seed + epoch)
-            indices = torch.randperm(self.len_data, generator=g).tolist()
-            yield from indices
-            
-            # update the epoch, but it may have been that this method was called several times
-            # so for consistency, we only want to report the highest epoch reached.
-            epoch += 1
-            self._epoch = max(self._epoch, epoch)
-
-    
-    def __len__(self):
-        return self.len_data
-    
 def mb_collate_fn(minibatch, batch_num_loss_counted_tokens):
     """Collates a list of samples into a single packed batch for Flash Attention.
 
@@ -331,13 +286,14 @@ def get_data_loader(
     world_size: int | None = None,
     dummy_sample: int | None = None,  # TODO: separate this concept from the data loader
     num_workers: int = 0,
-
-    # TODO: refactor this concept so that we instead use a regular sampler, and when this is enabled
-    # we just keep looping without ever stopping. This should have the same effect as the current implementation.
-    use_infinite_sampler: bool = True,   # keep this true for now for backwards compatibility
 ):
+    """Create a data loader with epoch-based sampling.
+    
+    The EpochSampler is used for all training modes (EPOCH, STEP, TOKEN, and INFINITE).
+    For infinite training, the training loop will continue iterating over epochs indefinitely.
+    """
     dataset = JsonlDataset(data_path)
-    sampler = InfiniteSampler(len(dataset), seed=seed) if use_infinite_sampler else EpochSampler(len(dataset), seed=seed)
+    sampler = EpochSampler(len(dataset), seed=seed)
     
     return DataLoader(
         dataset, 

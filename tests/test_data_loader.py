@@ -1,7 +1,7 @@
 """
 Test suite for data loading and sampling components.
 
-Tests the JsonlDataset, InfiniteSampler, and MaxTokensPerRankCollator
+Tests the JsonlDataset and MaxTokensPerRankCollator
 to ensure correct data loading, sampling, and batching behavior.
 """
 import sys
@@ -18,7 +18,6 @@ from pathlib import Path
 
 from mini_trainer.sampler import (
     JsonlDataset,
-    InfiniteSampler,
     MaxTokensPerRankCollator,
     get_data_loader,
     mb_collate_fn,
@@ -113,59 +112,6 @@ class TestJsonlDataset:
         item = dataset[np.int64(1)]
         assert item is not None
 
-
-class TestInfiniteSampler:
-    """Test suite for the InfiniteSampler class."""
-    
-    def test_sampler_initialization(self):
-        """Test sampler initialization."""
-        sampler = InfiniteSampler(len_data=100, seed=42)
-        assert len(sampler) == 100
-        assert sampler.seed == 42
-    
-    def test_sampler_infinite_iteration(self):
-        """Test that sampler provides infinite iteration."""
-        sampler = InfiniteSampler(len_data=5, seed=42)
-        iterator = iter(sampler)
-        
-        # Collect indices for multiple epochs
-        indices = []
-        for _ in range(15):  # 3 epochs worth
-            indices.append(next(iterator))
-        
-        assert len(indices) == 15
-        # Check all indices are within range
-        assert all(0 <= idx < 5 for idx in indices)
-        
-        # Check that we have seen all indices
-        unique_indices = set(indices[:5])
-        assert len(unique_indices) == 5
-    
-    def test_sampler_deterministic_with_seed(self):
-        """Test that same seed produces same sequence."""
-        sampler1 = InfiniteSampler(len_data=10, seed=42)
-        sampler2 = InfiniteSampler(len_data=10, seed=42)
-        
-        iter1 = iter(sampler1)
-        iter2 = iter(sampler2)
-        
-        # Compare first 20 indices
-        for _ in range(20):
-            assert next(iter1) == next(iter2)
-    
-    def test_sampler_different_seeds(self):
-        """Test that different seeds produce different sequences."""
-        sampler1 = InfiniteSampler(len_data=10, seed=42)
-        sampler2 = InfiniteSampler(len_data=10, seed=43)
-        
-        iter1 = iter(sampler1)
-        iter2 = iter(sampler2)
-        
-        indices1 = [next(iter1) for _ in range(10)]
-        indices2 = [next(iter2) for _ in range(10)]
-        
-        # Sequences should be different (with high probability)
-        assert indices1 != indices2
 
 
 class TestMbCollateFn:
@@ -380,7 +326,6 @@ class TestGetDataLoader:
             batch_size=4,
             max_tokens_per_gpu=500,
             seed=42,
-            use_infinite_sampler=False,
         )
         # asserts that loading the model works properly
         assert loader is not None
@@ -418,8 +363,8 @@ class TestGetDataLoader:
 
     @patch('mini_trainer.sampler.dist.get_rank', return_value=0)
     @patch('mini_trainer.sampler.dist.get_world_size', return_value=1)
-    def test_get_data_loader_basic_infinite_sampler(self, mock_world_size, mock_rank, temp_data_file):
-        """Test basic data loader creation."""
+    def test_get_data_loader_epoch_wraparound(self, mock_world_size, mock_rank, temp_data_file):
+        """Test data loader behavior at epoch boundaries with EpochSampler."""
         expected_batch_size = 8
         expected_grad_accum_steps = 1
 
@@ -428,7 +373,6 @@ class TestGetDataLoader:
             batch_size=expected_batch_size,
             max_tokens_per_gpu=50000,  # so we dont accumulate in this test
             seed=42,
-            use_infinite_sampler=True,
         )
         # asserts that loading the model works properly
         assert loader is not None
@@ -448,23 +392,24 @@ class TestGetDataLoader:
         assert microbatch['num_samples'] == expected_batch_size
         assert loader.sampler.completed_epochs == 0
 
-        # now after the next batch, we should expect to see the same length,
-        # but now it should have incremented the epoch
+        # The next batch should only have 2 samples (10 total - 8 already seen = 2 remaining)
+        # After this, the epoch should be complete
         batch = next(loader_it)
         microbatch = batch[0]
-        assert microbatch['num_samples'] == expected_batch_size
-        assert loader.sampler.completed_epochs == 1
+        assert microbatch['num_samples'] == 2  # Only 2 samples left in the epoch
+        assert loader.sampler.completed_epochs == 0  # Epoch counter doesn't auto-increment
 
-        # but we can reset it to 0
-        loader.sampler.set_epoch(0)
-        assert loader.sampler.completed_epochs == 0
+        # Iterator should be exhausted now - need to create a new one for next epoch
+        # This would typically happen in the training loop
+        loader.sampler.set_epoch(1)  # Manually set to next epoch
+        assert loader.sampler.completed_epochs == 1  # Now it's incremented
+        loader_it = iter(loader)  # Create new iterator for the new epoch
         
-        # since we went 8 + 8 ==> 16, so adding another 8 should give us 24, 
-        # so we expect it to increment, but it has an internal counter that will override it
+        # Now we should get a full batch again from the new epoch
         batch = next(loader_it)
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_batch_size
-        assert loader.sampler.completed_epochs == 2
+        assert loader.sampler.completed_epochs == 1  # Still at epoch 1
 
 
 
@@ -482,7 +427,6 @@ class TestGetDataLoader:
             batch_size=8,
             max_tokens_per_gpu=500,
             seed=42,
-            use_infinite_sampler=False,
         )
         # asserts that loading the model works properly
         assert loader is not None
@@ -529,7 +473,6 @@ class TestGetDataLoader:
             batch_size=9,
             max_tokens_per_gpu=500,
             seed=42,
-            use_infinite_sampler=False,
         )
         # asserts that loading the model works properly
         assert loader is not None
@@ -556,7 +499,6 @@ class TestGetDataLoader:
             batch_size=9,
             max_tokens_per_gpu=500,
             seed=42,
-            use_infinite_sampler=False,
         )
 
         # asserts that loading the model works properly
