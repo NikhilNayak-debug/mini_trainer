@@ -978,33 +978,3 @@ def optim_wrapper(optimizer, model):
     return optimizer
 
 
-def create_svd_config(model, model_type=None, custom_patterns=None, rank_ratio=0.5):
-    """
-    Simple API to create SVD configuration for any model.
-    
-    Args:
-        model: The model to create config for
-        model_type: Model type ("llama", "gpt-j", "gpt-neo", "opt", "qwen") or None for auto-detection
-        custom_patterns: Custom list of parameter name patterns to target
-        rank_ratio: Ratio of the smaller dimension to use for top-k rank (default: 0.5)
-    
-    Returns:
-        Dictionary mapping parameter names to their top-k values
-        
-    Example:
-        # Use predefined patterns for Llama
-        config = create_svd_config(model, model_type="llama")
-        
-        # Use custom patterns for any model
-        config = create_svd_config(model, custom_patterns=["attn.q_proj", "attn.k_proj"])
-        
-        # Auto-detect model type
-        config = create_svd_config(model)
-    """
-    return auto_generate_target_svd_config(
-        model, 
-        model_name_or_class=model_type,
-        custom_patterns=custom_patterns,
-        rank_ratio=rank_ratio
-    )
-

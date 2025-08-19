@@ -149,7 +149,7 @@ def train(
         lr_scheduler: torch.optim.lr_scheduler.LRScheduler, 
         data_loader: torch.utils.data.DataLoader, 
         output_dir: str, 
-        min_samples_per_checkpoint: int, 
+        min_samples_per_checkpoint: int | None, 
         model_name_or_path: str,
         training_mode: TrainingMode = TrainingMode.INFINITE,
         max_epochs: int = 0,
@@ -173,7 +173,7 @@ def train(
         lr_scheduler (torch.optim.lr_scheduler.LRScheduler): Learning rate scheduler.
         data_loader (torch.utils.data.DataLoader): DataLoader providing training batches.
         output_dir (str): Directory path where checkpoints and logs will be saved.
-        min_samples_per_checkpoint (int): Minimum number of samples between checkpoints.
+        min_samples_per_checkpoint (int | None): Minimum number of samples between checkpoints. If None, sample-based checkpointing is disabled.
         model_name_or_path (str): Path or identifier of the base model for tokenizer loading.
         training_mode (Union[TrainingMode, str], optional): Training mode - EPOCH, STEP, TOKEN, or INFINITE. Can be either a TrainingMode enum or string value. Defaults to INFINITE.
         max_epochs (int, optional): Maximum number of epochs (for EPOCH mode). Defaults to 0.
@@ -313,7 +313,7 @@ def train(
             torch.distributed.barrier()
             
             # sample-based saving, keep in the inner loop
-            if total_samples_accumulated - last_saved_samples >= min_samples_per_checkpoint:
+            if min_samples_per_checkpoint is not None and total_samples_accumulated - last_saved_samples >= min_samples_per_checkpoint:
                 save_model(model, total_samples_accumulated, output_dir, model_name_or_path)
                 last_saved_samples = total_samples_accumulated
             
@@ -342,25 +342,28 @@ def train(
 
 
 
+
 @app.command()
 def main(
-    model_name_or_path: Annotated[str, Option(help="Model name or path")] = "Qwen/Qwen2.5-1.5B-Instruct",
-    data_path: Annotated[str, Option(help="Path to the training data JSONL file")] = "test.jsonl",
-    batch_size: Annotated[int, Option(help="Initial batch size before dynamic splitting")] = 1024,
-    max_tokens_per_gpu: Annotated[int, Option(help="Maximum tokens per GPU per minibatch")] = 10000,
-    learning_rate: Annotated[float, Option(help="Peak learning rate")] = 5e-6,
-    num_warmup_steps: Annotated[int, Option(help="Number of warmup steps for the LR scheduler")] = 10,
+    # the '...' is a way of defining required options/arguments without breaking Python's
+    # positional vs keyword argument rules
+    model_name_or_path: Annotated[str, Option(help="Model name or path")] = ...,
+    data_path: Annotated[str, Option(help="Path to the training data JSONL file")] = ...,
+    batch_size: Annotated[int, Option(help="Initial batch size before dynamic splitting")] = ...,
+    max_tokens_per_gpu: Annotated[int, Option(help="Maximum tokens per GPU per minibatch")] = ...,
+    learning_rate: Annotated[float, Option(help="Peak learning rate")] = ...,
+    num_warmup_steps: Annotated[int, Option(help="Number of warmup steps for the LR scheduler")] = 0,
     lr_scheduler: Annotated[str, Option(help="Learning rate scheduler type")] = "constant_with_warmup",
     lr_scheduler_kwargs: Annotated[str, Option(help="JSON string of scheduler-specific kwargs")] = "{}",
-    seed: Annotated[int, Option(help="Random seed for reproducibility")] = 42,
+    seed: Annotated[int, Option(help="Random seed for reproducibility")] = 67,
     use_liger_kernels: Annotated[bool, Option(help="Whether to use Liger kernels")] = False,
     orthogonal_subspace_learning: Annotated[bool, Option(help="Enable SVD based orthogonal subspace training")] = False,
     output_dir: Annotated[str, Option(help="Directory to save checkpoints and logs (required)")] = ...,
     logging_level: Annotated[LogLevelEnum, Option(help="Logging level", case_sensitive=False)] = LogLevelEnum.INFO,
-    min_samples_per_checkpoint: Annotated[int, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = ...,
+    min_samples_per_checkpoint: Annotated[int | None, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = None,
     use_infinite_sampler: Annotated[bool, Option(help="Whether to use an infinite sampler")] = True,
     # Training mode parameters
-    training_mode: Annotated[TrainingMode, Option(help="Training mode: epoch, step, token, or infinite", case_sensitive=False)] = TrainingMode.INFINITE,
+    training_mode: Annotated[TrainingMode, Option(help="Training mode: epoch, step, token, or infinite", case_sensitive=False)] = TrainingMode.INFINITE,  # todo: change this
     max_epochs: Annotated[int, Option(help="Maximum number of epochs (for epoch mode)")] = 0,
     max_steps: Annotated[int, Option(help="Maximum number of steps (for step mode)")] = 0,
     max_tokens: Annotated[int, Option(help="Maximum number of loss-counted tokens (for token mode)")] = 0,

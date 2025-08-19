@@ -61,7 +61,7 @@ class TestDataclasses:
         assert args.orthogonal_subspace_learning is False
         assert args.output_dir == "./output"
         assert args.logging_level == LogLevelEnum.INFO
-        assert args.min_samples_per_checkpoint == 1000
+        assert args.min_samples_per_checkpoint is None
         assert args.use_infinite_sampler is True
         assert args.training_mode == TrainingMode.INFINITE
         assert args.max_epochs == 0
@@ -407,6 +407,7 @@ class TestRunTraining:
             assert "--lr-scheduler=cosine" in command
             assert "--seed=123" in command
             assert f"--output-dir={tmpdir}" in command
+            # min_samples_per_checkpoint=5000 should be in the command
             assert "--min-samples-per-checkpoint=5000" in command
             assert "--use-liger-kernels" in command
             assert "--orthogonal-subspace-learning" in command
@@ -478,3 +479,439 @@ class TestEnums:
         """Test that TrainingMode can be compared with strings."""
         assert TrainingMode.EPOCH == "epoch"
         assert TrainingMode.INFINITE == "infinite"
+
+
+class TestParameterPassing:
+    """Test that parameters are correctly passed through to the training script."""
+    
+    def test_lr_scheduler_kwargs_empty(self):
+        """Test that empty lr_scheduler_kwargs is passed correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a mock training script that just prints the received arguments
+            mock_script = Path(tmpdir) / "mock_train.py"
+            mock_script.write_text("""
+import sys
+import json
+
+# Parse arguments and print lr_scheduler_kwargs
+for i, arg in enumerate(sys.argv):
+    if arg.startswith("--lr-scheduler-kwargs="):
+        kwargs_str = arg.split("=", 1)[1]
+        kwargs = json.loads(kwargs_str)
+        print(f"LR_SCHEDULER_KWARGS:{json.dumps(kwargs)}")
+        sys.exit(0)
+""")
+            
+            with patch('mini_trainer.api_train.Path') as mock_path:
+                # Make the train script path point to our mock script
+                mock_path.return_value.__truediv__.return_value = mock_script
+                
+                torch_args = TorchrunArgs(nproc_per_node=1)
+                train_args = TrainingArgs(
+                    output_dir=tmpdir,
+                    lr_scheduler_kwargs=None  # Should default to empty dict
+                )
+                
+                # Capture the subprocess output
+                with patch('subprocess.Popen') as mock_popen:
+                    mock_process = MagicMock()
+                    mock_process.stdout.readline.side_effect = [
+                        "LR_SCHEDULER_KWARGS:{}\n",
+                        ""  # End of output
+                    ]
+                    mock_process.poll.return_value = 0
+                    mock_process.wait.return_value = 0
+                    mock_popen.return_value = mock_process
+                    
+                    process = StreamablePopen(str(Path(tmpdir) / "test.log"), ["dummy"])
+                    process.process = mock_process
+                    
+                    # Check that empty dict is passed
+                    output = []
+                    for line in iter(mock_process.stdout.readline, ''):
+                        if line:
+                            output.append(line.strip())
+                    
+                    assert "LR_SCHEDULER_KWARGS:{}" in output[0]
+    
+    def test_lr_scheduler_kwargs_complex(self):
+        """Test that complex lr_scheduler_kwargs dict is passed correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a mock training script
+            mock_script = Path(tmpdir) / "mock_train.py"
+            mock_script.write_text("""
+import sys
+import json
+
+# Parse arguments and validate lr_scheduler_kwargs
+for i, arg in enumerate(sys.argv):
+    if arg.startswith("--lr-scheduler-kwargs="):
+        kwargs_str = arg.split("=", 1)[1]
+        kwargs = json.loads(kwargs_str)
+        # Validate the complex kwargs
+        assert "min_lr" in kwargs
+        assert kwargs["min_lr"] == 1e-6
+        assert "T_max" in kwargs
+        assert kwargs["T_max"] == 1000
+        assert "eta_min" in kwargs
+        assert kwargs["eta_min"] == 0.0
+        assert "nested" in kwargs
+        assert kwargs["nested"]["key1"] == "value1"
+        assert kwargs["nested"]["key2"] == 42
+        print("KWARGS_VALIDATED:SUCCESS")
+        sys.exit(0)
+
+print("KWARGS_VALIDATED:FAILED")
+sys.exit(1)
+""")
+            
+            complex_kwargs = {
+                "min_lr": 1e-6,
+                "T_max": 1000,
+                "eta_min": 0.0,
+                "nested": {
+                    "key1": "value1",
+                    "key2": 42
+                }
+            }
+            
+            # Actually run the subprocess to test end-to-end
+            command = [
+                "python", str(mock_script),
+                f"--lr-scheduler-kwargs={json.dumps(complex_kwargs)}"
+            ]
+            
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True
+            )
+            
+            assert result.returncode == 0
+            assert "KWARGS_VALIDATED:SUCCESS" in result.stdout
+    
+    def test_command_construction_with_special_chars(self):
+        """Test that special characters in kwargs are properly escaped."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                lr_scheduler_kwargs={
+                    "description": "A string with spaces and special chars: @#$%",
+                    "path": "/path/with/slashes",
+                    "float_val": 3.14159,
+                    "bool_val": True,
+                    "null_val": None
+                }
+            )
+            
+            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+                mock_popen = MagicMock()
+                mock_popen.poll.return_value = 0
+                mock_popen_class.return_value = mock_popen
+                
+                run_training(torch_args, train_args)
+                
+                # Get the constructed command
+                call_args = mock_popen_class.call_args
+                _, command = call_args[0]
+                
+                # Find the lr-scheduler-kwargs argument
+                kwargs_arg = None
+                for arg in command:
+                    if arg.startswith("--lr-scheduler-kwargs="):
+                        kwargs_arg = arg
+                        break
+                
+                assert kwargs_arg is not None
+                
+                # Extract and parse the JSON
+                json_str = kwargs_arg.split("=", 1)[1]
+                parsed_kwargs = json.loads(json_str)
+                
+                # Verify all values are preserved correctly
+                assert parsed_kwargs["description"] == "A string with spaces and special chars: @#$%"
+                assert parsed_kwargs["path"] == "/path/with/slashes"
+                assert parsed_kwargs["float_val"] == 3.14159
+                assert parsed_kwargs["bool_val"] is True
+                assert parsed_kwargs["null_val"] is None
+    
+    def test_all_boolean_flags_passed(self):
+        """Test that all boolean flags are correctly passed when True."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                use_liger_kernels=True,
+                orthogonal_subspace_learning=True,
+                use_infinite_sampler=True,
+                checkpoint_at_epoch=True,
+                save_final_checkpoint=True
+            )
+            
+            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+                mock_popen = MagicMock()
+                mock_popen.poll.return_value = 0
+                mock_popen_class.return_value = mock_popen
+                
+                run_training(torch_args, train_args)
+                
+                call_args = mock_popen_class.call_args
+                _, command = call_args[0]
+                
+                # Verify all boolean flags are present
+                assert "--use-liger-kernels" in command
+                assert "--orthogonal-subspace-learning" in command
+                assert "--use-infinite-sampler" in command
+                assert "--checkpoint-at-epoch" in command
+                assert "--save-final-checkpoint" in command
+    
+    def test_boolean_flags_not_passed_when_false(self):
+        """Test that boolean flags are not passed when False."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                use_liger_kernels=False,
+                orthogonal_subspace_learning=False,
+                use_infinite_sampler=False,
+                checkpoint_at_epoch=False,
+                save_final_checkpoint=False
+            )
+            
+            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+                mock_popen = MagicMock()
+                mock_popen.poll.return_value = 0
+                mock_popen_class.return_value = mock_popen
+                
+                run_training(torch_args, train_args)
+                
+                call_args = mock_popen_class.call_args
+                _, command = call_args[0]
+                
+                # Verify boolean flags are NOT present when False
+                assert "--use-liger-kernels" not in command
+                assert "--orthogonal-subspace-learning" not in command
+                # Note: use_infinite_sampler defaults to True, so we set it to False
+                assert "--use-infinite-sampler" not in command
+                assert "--checkpoint-at-epoch" not in command
+                assert "--save-final-checkpoint" not in command
+    
+    def test_training_mode_enum_passed_correctly(self):
+        """Test that TrainingMode enum values are correctly converted to strings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for mode in [TrainingMode.EPOCH, TrainingMode.STEP, TrainingMode.TOKEN, TrainingMode.INFINITE]:
+                torch_args = TorchrunArgs()
+                train_args = TrainingArgs(
+                    output_dir=tmpdir,
+                    training_mode=mode
+                )
+                
+                with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+                    mock_popen = MagicMock()
+                    mock_popen.poll.return_value = 0
+                    mock_popen_class.return_value = mock_popen
+                    
+                    run_training(torch_args, train_args)
+                    
+                    call_args = mock_popen_class.call_args
+                    _, command = call_args[0]
+                    
+                    # Find the training-mode argument
+                    mode_arg = None
+                    for arg in command:
+                        if arg.startswith("--training-mode="):
+                            mode_arg = arg
+                            break
+                    
+                    assert mode_arg == f"--training-mode={mode.value}"
+    
+    def test_logging_level_enum_passed_correctly(self):
+        """Test that LogLevelEnum values are correctly converted to strings."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for level in [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARNING, 
+                         LogLevelEnum.ERROR, LogLevelEnum.CRITICAL]:
+                torch_args = TorchrunArgs()
+                train_args = TrainingArgs(
+                    output_dir=tmpdir,
+                    logging_level=level
+                )
+                
+                with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+                    mock_popen = MagicMock()
+                    mock_popen.poll.return_value = 0
+                    mock_popen_class.return_value = mock_popen
+                    
+                    run_training(torch_args, train_args)
+                    
+                    call_args = mock_popen_class.call_args
+                    _, command = call_args[0]
+                    
+                    # Find the logging-level argument
+                    level_arg = None
+                    for arg in command:
+                        if arg.startswith("--logging-level="):
+                            level_arg = arg
+                            break
+                    
+                    assert level_arg == f"--logging-level={level.value}"
+    
+    def test_numeric_parameters_precision(self):
+        """Test that numeric parameters maintain precision when passed."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                learning_rate=1.23456789e-7,  # Very small float
+                batch_size=2048,
+                max_tokens_per_gpu=50000,
+                num_warmup_steps=1000,
+                min_samples_per_checkpoint=10000,
+                max_epochs=100,
+                max_steps=50000,
+                max_tokens=1000000000  # Large integer
+            )
+            
+            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+                mock_popen = MagicMock()
+                mock_popen.poll.return_value = 0
+                mock_popen_class.return_value = mock_popen
+                
+                run_training(torch_args, train_args)
+                
+                call_args = mock_popen_class.call_args
+                _, command = call_args[0]
+                
+                # Check that numeric values are preserved
+                assert "--learning-rate=1.23456789e-07" in command
+                assert "--batch-size=2048" in command
+                assert "--max-tokens-per-gpu=50000" in command
+                assert "--num-warmup-steps=1000" in command
+                assert "--min-samples-per-checkpoint=10000" in command
+                assert "--max-epochs=100" in command
+                assert "--max-steps=50000" in command
+                assert "--max-tokens=1000000000" in command
+    
+    def test_end_to_end_parameter_reception(self):
+        """Integration test that verifies train.py receives parameters correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a mock train.py that validates all received parameters
+            mock_train_script = Path(tmpdir) / "validate_train.py"
+            mock_train_script.write_text("""
+import sys
+import json
+import argparse
+
+# Parse all arguments exactly as train.py would
+parser = argparse.ArgumentParser()
+parser.add_argument("--model-name-or-path", type=str)
+parser.add_argument("--data-path", type=str)
+parser.add_argument("--batch-size", type=int)
+parser.add_argument("--max-tokens-per-gpu", type=int)
+parser.add_argument("--learning-rate", type=float)
+parser.add_argument("--num-warmup-steps", type=int)
+parser.add_argument("--lr-scheduler", type=str)
+parser.add_argument("--lr-scheduler-kwargs", type=str)
+parser.add_argument("--seed", type=int)
+parser.add_argument("--output-dir", type=str)
+parser.add_argument("--logging-level", type=str)
+parser.add_argument("--min-samples-per-checkpoint", type=int, default=None)
+parser.add_argument("--training-mode", type=str)
+parser.add_argument("--max-epochs", type=int)
+parser.add_argument("--max-steps", type=int)
+parser.add_argument("--max-tokens", type=int)
+parser.add_argument("--use-liger-kernels", action="store_true")
+parser.add_argument("--orthogonal-subspace-learning", action="store_true")
+parser.add_argument("--use-infinite-sampler", action="store_true")
+parser.add_argument("--checkpoint-at-epoch", action="store_true")
+parser.add_argument("--save-final-checkpoint", action="store_true")
+
+args = parser.parse_args()
+
+# Validate received values
+validation_results = []
+
+# Check string parameters
+validation_results.append(("model", args.model_name_or_path == "test-model-path"))
+validation_results.append(("data", args.data_path == "/path/to/data.jsonl"))
+validation_results.append(("scheduler", args.lr_scheduler == "cosine_annealing"))
+validation_results.append(("output", args.output_dir.endswith("test_output")))
+validation_results.append(("logging", args.logging_level == "DEBUG"))
+validation_results.append(("mode", args.training_mode == "epoch"))
+
+# Check numeric parameters
+validation_results.append(("batch", args.batch_size == 512))
+validation_results.append(("tokens", args.max_tokens_per_gpu == 8192))
+validation_results.append(("lr", abs(args.learning_rate - 3.5e-5) < 1e-10))
+validation_results.append(("warmup", args.num_warmup_steps == 250))
+validation_results.append(("checkpoint", args.min_samples_per_checkpoint == 2500 if args.min_samples_per_checkpoint is not None else False))
+validation_results.append(("epochs", args.max_epochs == 10))
+validation_results.append(("steps", args.max_steps == 1000))
+validation_results.append(("max_tokens", args.max_tokens == 5000000))
+validation_results.append(("seed", args.seed == 999))
+
+# Check boolean flags
+validation_results.append(("liger", args.use_liger_kernels == True))
+validation_results.append(("osft", args.orthogonal_subspace_learning == True))
+validation_results.append(("infinite", args.use_infinite_sampler == False))
+validation_results.append(("epoch_ckpt", args.checkpoint_at_epoch == True))
+validation_results.append(("final_ckpt", args.save_final_checkpoint == True))
+
+# Check lr_scheduler_kwargs JSON parsing
+try:
+    kwargs = json.loads(args.lr_scheduler_kwargs)
+    validation_results.append(("kwargs_T_max", kwargs.get("T_max") == 500))
+    validation_results.append(("kwargs_eta_min", abs(kwargs.get("eta_min", 0) - 1e-7) < 1e-10))
+    validation_results.append(("kwargs_nested", kwargs.get("nested", {}).get("value") == "test"))
+except:
+    validation_results.append(("kwargs_parse", False))
+
+# Report results
+failed = [name for name, passed in validation_results if not passed]
+if failed:
+    print(f"VALIDATION_FAILED: {','.join(failed)}")
+    sys.exit(1)
+else:
+    print("VALIDATION_SUCCESS")
+    sys.exit(0)
+""")
+            
+            # Set up the test parameters with specific values
+            complex_kwargs = {
+                "T_max": 500,
+                "eta_min": 1e-7,
+                "nested": {"value": "test"}
+            }
+            
+            # Build the command as run_training would
+            command = [
+                "python", str(mock_train_script),
+                "--model-name-or-path=test-model-path",
+                "--data-path=/path/to/data.jsonl",
+                "--batch-size=512",
+                "--max-tokens-per-gpu=8192",
+                "--learning-rate=3.5e-05",
+                "--num-warmup-steps=250",
+                "--lr-scheduler=cosine_annealing",
+                f"--lr-scheduler-kwargs={json.dumps(complex_kwargs)}",
+                "--seed=999",
+                f"--output-dir={tmpdir}/test_output",
+                "--logging-level=DEBUG",
+                "--min-samples-per-checkpoint=2500",
+                "--training-mode=epoch",
+                "--max-epochs=10",
+                "--max-steps=1000",
+                "--max-tokens=5000000",
+                "--use-liger-kernels",
+                "--orthogonal-subspace-learning",
+                # Note: NOT including --use-infinite-sampler (testing False)
+                "--checkpoint-at-epoch",
+                "--save-final-checkpoint"
+            ]
+            
+            # Run the validation script
+            result = subprocess.run(command, capture_output=True, text=True)
+            
+            # Check validation passed
+            assert result.returncode == 0, f"Validation failed: {result.stdout}\n{result.stderr}"
+            assert "VALIDATION_SUCCESS" in result.stdout

@@ -105,12 +105,15 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
         f"--seed={train_args.seed}",
         f"--output-dir={train_args.output_dir}",
         f"--logging-level={train_args.logging_level.value}",
-        f"--min-samples-per-checkpoint={train_args.min_samples_per_checkpoint}",
         f"--training-mode={train_args.training_mode.value}",
         f"--max-epochs={train_args.max_epochs}",
         f"--max-steps={train_args.max_steps}",
         f"--max-tokens={train_args.max_tokens}",
     ]
+    
+    # Add optional min_samples_per_checkpoint if specified
+    if train_args.min_samples_per_checkpoint is not None:
+        command.append(f"--min-samples-per-checkpoint={train_args.min_samples_per_checkpoint}")
     
     # Add optional boolean flags
     if train_args.use_liger_kernels:

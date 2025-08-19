@@ -60,7 +60,7 @@ class TrainingArgs:
     # Output and logging
     output_dir: str = "./output"
     logging_level: LogLevelEnum = LogLevelEnum.INFO
-    min_samples_per_checkpoint: int = 1000
+    min_samples_per_checkpoint: Optional[int] = None
     
     # Sampling configuration
     use_infinite_sampler: bool = True
