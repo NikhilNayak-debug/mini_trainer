@@ -35,7 +35,7 @@ def load_original_model(model_name_or_path, use_liger_kernels=False):
     original_model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
-        orthogonal_subspace_learning=False,  # No SVD
+        osft=False,  # No SVD
         rank=rank,
     )
     return original_model
@@ -49,7 +49,7 @@ def load_svd_model(model_name_or_path, use_liger_kernels=False):
     svd_model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
-        orthogonal_subspace_learning=True,  # Enable SVD
+        osft=True,  # Enable SVD
         rank=rank,
         upcast_dtype=torch.float64,
         output_dtype=torch.float64,

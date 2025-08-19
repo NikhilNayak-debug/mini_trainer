@@ -58,7 +58,7 @@ class TestDataclasses:
         assert args.lr_scheduler == "constant_with_warmup"
         assert args.seed == 42
         assert args.use_liger_kernels is False
-        assert args.orthogonal_subspace_learning is False
+        assert args.osft is False
         assert args.output_dir == "./output"
         assert args.logging_level == LogLevelEnum.INFO
         assert args.min_samples_per_checkpoint is None
@@ -373,7 +373,7 @@ class TestRunTraining:
                 seed=123,
                 output_dir=tmpdir,
                 use_liger_kernels=True,
-                orthogonal_subspace_learning=True,
+                osft=True,
                 min_samples_per_checkpoint=5000
             )
  
@@ -409,7 +409,7 @@ class TestRunTraining:
             # min_samples_per_checkpoint=5000 should be in the command
             assert "--min-samples-per-checkpoint=5000" in command
             assert "--use-liger-kernels" in command
-            assert "--orthogonal-subspace-learning" in command
+            assert "--osft" in command
             
             # Verify listen was called
             mock_popen.listen.assert_called_once()
@@ -642,7 +642,7 @@ sys.exit(1)
             train_args = TrainingArgs(
                 output_dir=tmpdir,
                 use_liger_kernels=True,
-                orthogonal_subspace_learning=True,
+                osft=True,
                 checkpoint_at_epoch=True,
                 save_final_checkpoint=True
             )
@@ -659,7 +659,7 @@ sys.exit(1)
                 
                 # Verify all boolean flags are present
                 assert "--use-liger-kernels" in command
-                assert "--orthogonal-subspace-learning" in command
+                assert "--osft" in command
                 assert "--checkpoint-at-epoch" in command
                 assert "--save-final-checkpoint" in command
     
@@ -670,7 +670,7 @@ sys.exit(1)
             train_args = TrainingArgs(
                 output_dir=tmpdir,
                 use_liger_kernels=False,
-                orthogonal_subspace_learning=False,
+                osft=False,
                 checkpoint_at_epoch=False,
                 save_final_checkpoint=False
             )
@@ -687,7 +687,7 @@ sys.exit(1)
                 
                 # Verify boolean flags are NOT present when False
                 assert "--use-liger-kernels" not in command
-                assert "--orthogonal-subspace-learning" not in command
+                assert "--osft" not in command
                 assert "--checkpoint-at-epoch" not in command
                 assert "--save-final-checkpoint" not in command
     
@@ -815,7 +815,7 @@ parser.add_argument("--max-epochs", type=int)
 parser.add_argument("--max-steps", type=int)
 parser.add_argument("--max-tokens", type=int)
 parser.add_argument("--use-liger-kernels", action="store_true")
-parser.add_argument("--orthogonal-subspace-learning", action="store_true")
+parser.add_argument("--osft", action="store_true")
 parser.add_argument("--checkpoint-at-epoch", action="store_true")
 parser.add_argument("--save-final-checkpoint", action="store_true")
 
@@ -845,7 +845,7 @@ validation_results.append(("seed", args.seed == 999))
 
 # Check boolean flags
 validation_results.append(("liger", args.use_liger_kernels == True))
-validation_results.append(("osft", args.orthogonal_subspace_learning == True))
+validation_results.append(("osft", args.osft == True))
 validation_results.append(("epoch_ckpt", args.checkpoint_at_epoch == True))
 validation_results.append(("final_ckpt", args.save_final_checkpoint == True))
 
@@ -895,7 +895,7 @@ else:
                 "--max-steps=1000",
                 "--max-tokens=5000000",
                 "--use-liger-kernels",
-                "--orthogonal-subspace-learning",
+                "--osft",
                 # Note: NOT including --use-infinite-sampler (testing False)
                 "--checkpoint-at-epoch",
                 "--save-final-checkpoint"

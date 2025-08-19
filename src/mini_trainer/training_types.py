@@ -55,7 +55,7 @@ class TrainingArgs:
     
     # Model configuration
     use_liger_kernels: bool = False
-    orthogonal_subspace_learning: bool = False
+    osft: bool = False
     
     # Output and logging
     output_dir: str = "./output"

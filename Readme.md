@@ -16,7 +16,7 @@ MiniTrainer is a small form factor and extremely efficient training library for 
 
 ### 🔥 What's New (July-02-2025) - High-Performance Batch Packing
 
-- **Orthogonal Subspace Learning (OSFT)** mode: allows fine-tuning in a parameter-efficient low-rank subspace while freezing parts of the core model that need to be preserved for continual learning scenarios. Controlled via `--orthogonal-subspace-learning` flag.
+- **Orthogonal Subspace Learning (OSFT)** mode: allows fine-tuning in a parameter-efficient low-rank subspace while freezing parts of the core model that need to be preserved for continual learning scenarios. Controlled via `--osft` flag.
 - **Numba-Optimized LPT Batch Packing**: Implemented high-performance LPT (Longest Processing Time) algorithm with JIT compilation for optimal load balancing across GPUs. Achieves 3.5x better speed than greedy while providing up to 217% better load balance, 60-89% lower variance, and 33% fewer minibatches.
 - **Comprehensive test suite**: Added extensive testing framework in `tests/` folder with realistic outlier scenarios and performance benchmarks.
 
@@ -98,7 +98,7 @@ all training parameters can be found in [train.py](./train.py). Make sure to use
 
 ```shell
 torchrun --nnodes=1 --nproc-per-node=7 train.py \
-        --orthogonal-subspace-learning \
+        --osft \
         --output-dir /new_data/aldo/balrog_test \
         --data-path ./tokenized_data.jsonl \
         --model-name-or-path Qwen/Qwen2.5-1.5B-instruct \

@@ -357,7 +357,7 @@ def main(
     lr_scheduler_kwargs: Annotated[str, Option(help="JSON string of scheduler-specific kwargs")] = "{}",
     seed: Annotated[int, Option(help="Random seed for reproducibility")] = 67,
     use_liger_kernels: Annotated[bool, Option(help="Whether to use Liger kernels")] = False,
-    orthogonal_subspace_learning: Annotated[bool, Option(help="Enable SVD based orthogonal subspace training")] = False,
+    osft: Annotated[bool, Option(help="Enable SVD based orthogonal subspace training")] = False,
     output_dir: Annotated[str, Option(help="Directory to save checkpoints and logs (required)")] = ...,
     logging_level: Annotated[LogLevelEnum, Option(help="Logging level", case_sensitive=False)] = LogLevelEnum.INFO,
     min_samples_per_checkpoint: Annotated[int | None, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = None,
@@ -387,7 +387,7 @@ def main(
             "lr_scheduler": lr_scheduler,
             "seed": seed,
             "use_liger_kernels": use_liger_kernels,
-            "orthogonal_subspace_learning": orthogonal_subspace_learning,
+            "osft": osft,
             "output_dir": output_dir,
             "logging_level": logging_level.value,
             "min_samples_per_checkpoint": min_samples_per_checkpoint,
@@ -441,7 +441,7 @@ def main(
     model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
-        orthogonal_subspace_learning=orthogonal_subspace_learning,
+        osft=osft,
         rank=rank,
     )
     model, optimizer, lr_scheduler = setup_training_components(

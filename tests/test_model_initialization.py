@@ -192,7 +192,7 @@ class TestSetupModel:
             result = setup_model(
                 model_name_or_path="meta-llama/Llama-2-7b",
                 use_liger_kernels=False,
-                orthogonal_subspace_learning=False,
+                osft=False,
                 rank=0
             )
         
@@ -337,7 +337,7 @@ class TestIntegration:
                         model = setup_model(
                             model_name_or_path="test/model",
                             use_liger_kernels=False,
-                            orthogonal_subspace_learning=False,
+                            osft=False,
                             rank=0
                         )
                         

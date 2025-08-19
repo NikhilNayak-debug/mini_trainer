@@ -97,7 +97,7 @@ def align_model_and_tokenizer(model, tokenizer):
 
 def setup_model(
     model=None,
-    orthogonal_subspace_learning: bool = False,
+    osft: bool = False,
     rank: int = 0,
     upcast_dtype: torch.dtype = torch.float32,
     output_dtype: torch.dtype | None = None,
@@ -190,9 +190,9 @@ def setup_model(
         torch.cuda.empty_cache()
         return model
     
-    # Choose whether to apply orthogonal subspace learning (OSL) based on `orthogonal_subspace_learning` flag
+    # Choose whether to apply orthogonal subspace learning (OSL) based on `osft` flag
     # OSL enables continual fine-tuning by constraining updates to low-rank directions orthogonal to critical knowledge that is to be preserved
-    model = load_svd_model() if orthogonal_subspace_learning else load_standard_model()
+    model = load_svd_model() if osft else load_standard_model()
 
     if model.__class__.__name__ not in [
         "MistralForCausalLM",

@@ -342,7 +342,7 @@ class TestMainCLI:
                 lr_scheduler="constant",
                 seed=42,
                 use_liger_kernels=False,
-                orthogonal_subspace_learning=False,
+                osft=False,
                 output_dir=temp_dir,
                 logging_level=LogLevelEnum.INFO,
                 min_samples_per_checkpoint=1000
@@ -391,7 +391,7 @@ class TestMainCLI:
                 lr_scheduler="constant",
                 seed=42,
                 use_liger_kernels=True,
-                orthogonal_subspace_learning=True,
+                osft=True,
                 output_dir=temp_dir,
                 logging_level=LogLevelEnum.DEBUG,
                 min_samples_per_checkpoint=500
@@ -408,7 +408,7 @@ class TestMainCLI:
             assert params['batch_size'] == 32
             assert params['learning_rate'] == 1e-5
             assert params['use_liger_kernels'] is True
-            assert params['orthogonal_subspace_learning'] is True
+            assert params['osft'] is True
     
     @patch('mini_trainer.train.init_distributed_environment')
     @patch('mini_trainer.train.dist.get_rank', return_value=1)
@@ -435,7 +435,7 @@ class TestMainCLI:
                                         lr_scheduler="constant",
                                         seed=42,
                                         use_liger_kernels=False,
-                                        orthogonal_subspace_learning=False,
+                                        osft=False,
                                         output_dir=temp_dir,
                                         logging_level=LogLevelEnum.INFO,
                                         min_samples_per_checkpoint=1000

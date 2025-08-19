@@ -99,7 +99,7 @@ class TestMixedPrecisionDtypes:
             model = setup_model(
                 model_name_or_path=str(model_path),
                 use_liger_kernels=False,
-                orthogonal_subspace_learning=False,
+                osft=False,
                 rank=0
             )
             

@@ -119,8 +119,8 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
     if train_args.use_liger_kernels:
         command.append("--use-liger-kernels")
     
-    if train_args.orthogonal_subspace_learning:
-        command.append("--orthogonal-subspace-learning")
+    if train_args.osft:
+        command.append("--osft")
     
     if train_args.checkpoint_at_epoch:
         command.append("--checkpoint-at-epoch")
