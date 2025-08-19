@@ -10,17 +10,52 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import tempfile
-import time
-from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock, call, mock_open
+from unittest.mock import MagicMock, patch, mock_open
 
 import torch
-import torch.nn as nn
 import pytest
-import numpy as np
 
-from mini_trainer.train import train, main, LogLevelEnum
+from mini_trainer.train import train, main, validate_training_mode
 from mini_trainer.batch_metrics import BatchMetrics
+from mini_trainer.training_types import TrainingMode, LogLevelEnum
+
+
+class TestValidateTrainingMode:
+    """Test suite for validate_training_mode function."""
+    
+    def test_epoch_mode_validation(self):
+        """Test EPOCH mode validation."""
+        # Should pass with valid max_epochs
+        validate_training_mode(TrainingMode.EPOCH, max_epochs=5)
+        
+        # Should fail without max_epochs
+        with pytest.raises(ValueError, match="EPOCH training mode requires max_epochs > 0"):
+            validate_training_mode(TrainingMode.EPOCH, max_epochs=0)
+    
+    def test_step_mode_validation(self):
+        """Test STEP mode validation."""
+        # Should pass with valid max_steps
+        validate_training_mode(TrainingMode.STEP, max_steps=100)
+        
+        # Should fail without max_steps
+        with pytest.raises(ValueError, match="STEP training mode requires max_steps > 0"):
+            validate_training_mode(TrainingMode.STEP, max_steps=0)
+    
+    def test_token_mode_validation(self):
+        """Test TOKEN mode validation."""
+        # Should pass with valid max_tokens
+        validate_training_mode(TrainingMode.TOKEN, max_tokens=1000)
+        
+        # Should fail without max_tokens
+        with pytest.raises(ValueError, match="TOKEN training mode requires max_tokens > 0"):
+            validate_training_mode(TrainingMode.TOKEN, max_tokens=0)
+    
+    def test_infinite_mode_validation(self):
+        """Test INFINITE mode validation."""
+        # Should pass with or without parameters
+        validate_training_mode(TrainingMode.INFINITE)
+        validate_training_mode(TrainingMode.INFINITE, max_epochs=0, max_steps=0, max_tokens=0)
+        validate_training_mode(TrainingMode.INFINITE, max_epochs=5, max_steps=100, max_tokens=1000)
 
 
 class TestTrainFunction:
@@ -37,9 +72,10 @@ class TestTrainFunction:
         mock_param.device = torch.device('cpu')
         model.parameters = MagicMock(return_value=iter([mock_param]))  # Return iterator
         
-        # Mock model forward pass
+        # Mock model forward pass - return unreduced losses (per-token)
         output = MagicMock()
-        output.loss = torch.tensor(2.5, requires_grad=True)
+        # Return a tensor of losses that will be summed in the training loop
+        output.loss = torch.tensor([1.5, 2.0, 3.0, 2.5, 1.0], requires_grad=True)  # 5 token losses
         model.return_value = output
         
         return model
@@ -67,7 +103,7 @@ class TestTrainFunction:
         minibatch = {
             'input_ids': torch.tensor([[1, 2, 3, 4, 5]]),
             'labels': torch.tensor([[10, 20, 30, 40, 50]]),
-            'position_ids': torch.tensor([[0, 1, 2, 3, 4]]),
+            'position_ids': torch.tensor([[1, 1, 1, 1, 1]]),
             'num_loss_counted_tokens': 5,
             'num_samples': 1,
             'batch_num_loss_counted_tokens': 5
@@ -80,6 +116,9 @@ class TestTrainFunction:
         
         loader = MagicMock()
         loader.__iter__ = data_generator
+        # Add sampler with set_epoch method
+        loader.sampler = MagicMock()
+        loader.sampler.set_epoch = MagicMock()
         return loader
     
     @patch.dict(os.environ, {'WORLD_SIZE': '2', 'RANK': '0'})
@@ -110,15 +149,19 @@ class TestTrainFunction:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Run training for a few steps
             with patch('mini_trainer.train.iter', side_effect=lambda x: iter(x)):
-                # Limit iterations by making data_loader finite
+                # Use STEP mode with max_steps to ensure termination
                 mock_data_loader.__iter__ = lambda self: iter([
                     [{'input_ids': torch.tensor([[1, 2]]),
                       'labels': torch.tensor([[10, 20]]),
+                      'position_ids': torch.tensor([5], dtype=torch.long),
                       'num_loss_counted_tokens': 2,
                       'num_samples': 1,
                       'batch_num_loss_counted_tokens': 2}]
-                    for _ in range(2)
+                    for _ in range(5)  # Provide enough batches
                 ])
+                # Add sampler with set_epoch method
+                mock_data_loader.sampler = MagicMock()
+                mock_data_loader.sampler.set_epoch = MagicMock()
                 
                 train(
                     model=mock_model,
@@ -127,7 +170,9 @@ class TestTrainFunction:
                     data_loader=mock_data_loader,
                     output_dir=temp_dir,
                     min_samples_per_checkpoint=10,
-                    model_name_or_path="test/model"
+                    model_name_or_path="test/model",
+                    training_mode=TrainingMode.STEP,
+                    max_steps=2  # Train for only 2 steps
                 )
         
         # Verify model was set to training mode
@@ -169,12 +214,16 @@ class TestTrainFunction:
                 'labels': torch.tensor([[10, 20, 30]]),
                 'num_loss_counted_tokens': 3,
                 'num_samples': 3,  # 3 samples per batch
+                'position_ids': torch.tensor([1, 1, 1], dtype=torch.long),
                 'batch_num_loss_counted_tokens': 3
             }]
             batches.append(batch)
         
         mock_data_loader = MagicMock()
         mock_data_loader.__iter__ = lambda self: iter(batches)
+        # Add sampler with set_epoch method
+        mock_data_loader.sampler = MagicMock()
+        mock_data_loader.sampler.set_epoch = MagicMock()
         
         with tempfile.TemporaryDirectory() as temp_dir:
             train(
@@ -184,7 +233,9 @@ class TestTrainFunction:
                 data_loader=mock_data_loader,
                 output_dir=temp_dir,
                 min_samples_per_checkpoint=10,  # Save after 10 samples
-                model_name_or_path="test/model"
+                model_name_or_path="test/model",
+                training_mode=TrainingMode.STEP,
+                max_steps=5  # Train for 5 steps to accumulate enough samples
             )
         
         # Should save checkpoint when samples exceed threshold
@@ -219,11 +270,15 @@ class TestTrainFunction:
         mock_data_loader = MagicMock()
         mock_data_loader.__iter__ = lambda self: iter([[{
             'input_ids': torch.tensor([[1, 2]]),
-            'labels': torch.tensor([[10, 20]]),
+            'labels': torch.tensor([[10, 20,]], dtype=torch.long),
+            'position_ids': torch.tensor([[1, 1,]], dtype=torch.long),
             'num_loss_counted_tokens': 2,
             'num_samples': 1,
             'batch_num_loss_counted_tokens': 2
-        }]])
+        }]] * 2)  # Provide 2 batches
+        # Add sampler with set_epoch method
+        mock_data_loader.sampler = MagicMock()
+        mock_data_loader.sampler.set_epoch = MagicMock()
         
         with tempfile.TemporaryDirectory() as temp_dir:
             train(
@@ -233,7 +288,9 @@ class TestTrainFunction:
                 data_loader=mock_data_loader,
                 output_dir=temp_dir,
                 min_samples_per_checkpoint=100,
-                model_name_or_path="test/model"
+                model_name_or_path="test/model",
+                training_mode=TrainingMode.STEP,
+                max_steps=1  # Train for only 1 step
             )
         
         # Non-main process should still train
@@ -344,14 +401,14 @@ class TestMainCLI:
         mock_file.assert_called()
         
         # Extract what was written
-        written_content = ''.join(call.args[0] for call in mock_file().write.call_args_list)
+        written_content = ''.join(c.args[0] for c in mock_file().write.call_args_list)
         if written_content:
             params = json.loads(written_content)
             assert params['model_name_or_path'] == "test/model"
             assert params['batch_size'] == 32
             assert params['learning_rate'] == 1e-5
-            assert params['use_liger_kernels'] == True
-            assert params['orthogonal_subspace_learning'] == True
+            assert params['use_liger_kernels'] is True
+            assert params['orthogonal_subspace_learning'] is True
     
     @patch('mini_trainer.train.init_distributed_environment')
     @patch('mini_trainer.train.dist.get_rank', return_value=1)
@@ -467,9 +524,9 @@ class TestErrorHandling:
         mock_param.device = torch.device('cpu')
         mock_model.parameters = MagicMock(return_value=iter([mock_param]))
         
-        # Mock model output
+        # Mock model output - return unreduced loss for 1 token
         output = MagicMock()
-        output.loss = torch.tensor(2.5, requires_grad=True)
+        output.loss = torch.tensor([2.5], requires_grad=True)  # 1 token loss
         mock_model.return_value = output
         
         # Data loader with minimal batch
@@ -477,10 +534,14 @@ class TestErrorHandling:
         mock_data_loader.__iter__ = lambda self: iter([
             [{'input_ids': torch.tensor([[1]]),
               'labels': torch.tensor([[10]]),
+              'position_ids': torch.tensor([1], dtype=torch.long),
               'num_loss_counted_tokens': 1,
               'num_samples': 1,
               'batch_num_loss_counted_tokens': 1}]
-        ])
+        ] * 2)  # Provide 2 batches
+        # Add sampler with set_epoch method
+        mock_data_loader.sampler = MagicMock()
+        mock_data_loader.sampler.set_epoch = MagicMock()
         
         mock_optimizer = MagicMock()
         mock_scheduler = MagicMock()
@@ -497,11 +558,140 @@ class TestErrorHandling:
                     data_loader=mock_data_loader,
                     output_dir=temp_dir,
                     min_samples_per_checkpoint=100,
-                    model_name_or_path="test/model"
+                    model_name_or_path="test/model",
+                    training_mode=TrainingMode.STEP,
+                    max_steps=1  # Train for only 1 step
                 )
                 
                 # Should have processed one batch
                 assert mock_grad_step.call_count == 1
+
+
+class TestTrainingModes:
+    """Test suite for different training modes."""
+    
+    @patch.dict(os.environ, {'WORLD_SIZE': '1', 'RANK': '0'})
+    @patch('torch.distributed.is_initialized', return_value=True)
+    @patch('torch.distributed.get_world_size', return_value=1)
+    @patch('torch.distributed.get_rank', return_value=0)
+    @patch('torch.distributed.all_reduce')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.take_gradient_step')
+    @patch('torch.cuda.reset_peak_memory_stats')
+    @patch('torch.cuda.empty_cache')
+    @patch('torch.cuda.max_memory_allocated', return_value=1e9)
+    @patch('torch.distributed.barrier')
+    def test_step_mode(self, mock_barrier, mock_memory, mock_empty_cache,
+                      mock_reset_stats, mock_grad_step, mock_logger_cls,
+                      mock_dist_rank, mock_all_reduce, mock_torch_rank,
+                      mock_world_size, mock_is_init):
+        """Test STEP training mode stops after max_steps."""
+        mock_logger = MagicMock()
+        mock_logger_cls.return_value = mock_logger
+        mock_grad_step.return_value = torch.tensor(1.0)
+        
+        # Setup model
+        mock_model = MagicMock()
+        mock_model.train = MagicMock()
+        mock_param = MagicMock()
+        mock_param.device = torch.device('cpu')
+        mock_model.parameters = MagicMock(return_value=iter([mock_param]))
+        output = MagicMock()
+        # Return unreduced losses for 2 tokens
+        output.loss = torch.tensor([2.5, 3.0], requires_grad=True)  # 2 token losses
+        mock_model.return_value = output
+        
+        # Create data loader with more batches than we'll use
+        mock_data_loader = MagicMock()
+        mock_data_loader.__iter__ = lambda self: iter([[{
+            'input_ids': torch.tensor([[1, 2]]),
+            'labels': torch.tensor([[10, 20]]),
+            'position_ids': torch.tensor([2], dtype=torch.long),
+            'num_loss_counted_tokens': 2,
+            'num_samples': 1,
+            'batch_num_loss_counted_tokens': 2
+        }]] * 10)  # 10 batches available
+        mock_data_loader.sampler = MagicMock()
+        mock_data_loader.sampler.set_epoch = MagicMock()
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            train(
+                model=mock_model,
+                optimizer=MagicMock(),
+                lr_scheduler=MagicMock(),
+                data_loader=mock_data_loader,
+                output_dir=temp_dir,
+                min_samples_per_checkpoint=100,
+                model_name_or_path="test/model",
+                training_mode=TrainingMode.STEP,
+                max_steps=3  # Train for exactly 3 steps
+            )
+        
+        # Should have taken exactly 3 gradient steps
+        assert mock_grad_step.call_count == 3
+    
+    @patch.dict(os.environ, {'WORLD_SIZE': '1', 'RANK': '0'})
+    @patch('torch.distributed.is_initialized', return_value=True)
+    @patch('torch.distributed.get_world_size', return_value=1)
+    @patch('torch.distributed.get_rank', return_value=0)
+    @patch('torch.distributed.all_reduce')
+    @patch('mini_trainer.train.dist.get_rank', return_value=0)
+    @patch('mini_trainer.train.AsyncStructuredLogger')
+    @patch('mini_trainer.train.take_gradient_step')
+    @patch('torch.cuda.reset_peak_memory_stats')
+    @patch('torch.cuda.empty_cache')
+    @patch('torch.cuda.max_memory_allocated', return_value=1e9)
+    @patch('torch.distributed.barrier')
+    def test_token_mode(self, mock_barrier, mock_memory, mock_empty_cache,
+                       mock_reset_stats, mock_grad_step, mock_logger_cls,
+                       mock_dist_rank, mock_all_reduce, mock_torch_rank,
+                       mock_world_size, mock_is_init):
+        """Test TOKEN training mode stops after max_tokens."""
+        mock_logger = MagicMock()
+        mock_logger_cls.return_value = mock_logger
+        mock_grad_step.return_value = torch.tensor(1.0)
+        
+        # Setup model
+        mock_model = MagicMock()
+        mock_model.train = MagicMock()
+        mock_param = MagicMock()
+        mock_param.device = torch.device('cpu')
+        mock_model.parameters = MagicMock(return_value=iter([mock_param]))
+        output = MagicMock()
+        # Return unreduced losses for 5 tokens
+        output.loss = torch.tensor([2.5, 3.0, 1.5, 2.0, 3.5], requires_grad=True)  # 5 token losses
+        mock_model.return_value = output
+        
+        # Create data loader with batches containing specific token counts
+        mock_data_loader = MagicMock()
+        mock_data_loader.__iter__ = lambda self: iter([[{
+            'input_ids': torch.tensor([[1, 2, 3, 4, 5]]),  # 5 tokens
+            'labels': torch.tensor([[10, 20, 30, 40, 50]]),
+            'position_ids': torch.tensor([5], dtype=torch.long),
+            'num_loss_counted_tokens': 5,
+            'num_samples': 1,
+            'batch_num_loss_counted_tokens': 5  # 5 tokens counted per batch
+        }]] * 10)  # 10 batches available
+        mock_data_loader.sampler = MagicMock()
+        mock_data_loader.sampler.set_epoch = MagicMock()
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            train(
+                model=mock_model,
+                optimizer=MagicMock(),
+                lr_scheduler=MagicMock(),
+                data_loader=mock_data_loader,
+                output_dir=temp_dir,
+                min_samples_per_checkpoint=100,
+                model_name_or_path="test/model",
+                training_mode=TrainingMode.TOKEN,
+                max_tokens=12  # Stop after 12 tokens (will process 3 batches = 15 tokens),
+
+            )
+        
+        # Should have processed 3 batches (15 tokens total, stopped after reaching 12)
+        assert mock_grad_step.call_count == 3
 
 
 class TestMemoryManagement:
@@ -531,17 +721,22 @@ class TestMemoryManagement:
         mock_param.device = torch.device('cpu')
         mock_model.parameters = MagicMock(return_value=iter([mock_param]))
         output = MagicMock()
-        output.loss = torch.tensor(2.5, requires_grad=True)
+        # Return unreduced losses for 2 tokens
+        output.loss = torch.tensor([2.5, 3.0], requires_grad=True)  # 2 token losses
         mock_model.return_value = output
         
         mock_data_loader = MagicMock()
         mock_data_loader.__iter__ = lambda self: iter([[{
             'input_ids': torch.tensor([[1, 2]]),
             'labels': torch.tensor([[10, 20]]),
+            'position_ids': torch.tensor([1, 1], dtype=torch.long),
             'num_loss_counted_tokens': 2,
             'num_samples': 1,
             'batch_num_loss_counted_tokens': 2
-        }]])
+        }]] * 2)  # Provide 2 batches
+        # Add sampler with set_epoch method
+        mock_data_loader.sampler = MagicMock()
+        mock_data_loader.sampler.set_epoch = MagicMock()
         
         with patch('mini_trainer.train.take_gradient_step') as mock_grad_step:
             mock_grad_step.return_value = torch.tensor(1.0)
@@ -554,7 +749,9 @@ class TestMemoryManagement:
                     data_loader=mock_data_loader,
                     output_dir=temp_dir,
                     min_samples_per_checkpoint=100,
-                    model_name_or_path="test/model"
+                    model_name_or_path="test/model",
+                    training_mode=TrainingMode.STEP,
+                    max_steps=1  # Train for only 1 step
                 )
         
         # Verify memory management calls

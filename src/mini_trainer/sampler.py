@@ -121,6 +121,35 @@ class JsonlDataset(Dataset):
             'num_loss_counted_tokens': loss_counted_tokens,
         }
     
+class EpochSampler(Sampler):
+    """
+    Here we redefine RandomSampler so we can have a consistent signature with InfiniteSampler
+    """
+    def __init__(self, len_data: int, seed: int = 67, epoch: int = 0):
+        self.len_data = len_data
+        self.seed = seed
+        self._epoch = epoch
+
+    @property
+    def completed_epochs(self) -> int:
+        return self._epoch
+
+    def set_epoch(self, epoch: int):
+        self._epoch = epoch
+
+    def generate_samples(self):
+        g = torch.Generator()
+        g.manual_seed(self.seed)
+        samples = torch.randperm(self.len_data, generator=g).tolist()
+        return samples 
+
+    def __iter__(self):
+        samples = self.generate_samples()
+        yield from samples
+
+    def __len__(self):
+        return self.len_data
+
         
 class InfiniteSampler(Sampler):
     """Infinitely yields shuffled dataset indices. Crucially, in distributed
@@ -133,19 +162,36 @@ class InfiniteSampler(Sampler):
         len_data: The size of the dataset.
         seed: Initial random seed for shuffling (incremented each cycle).
     """
-    def __init__(self, len_data, seed: int = 37):
+    def __init__(self, len_data, seed: int = 37, epoch: int = 0):
         self.len_data = len_data
         self.seed = seed
+        self._epoch = epoch
+
+    @property
+    def completed_epochs(self) -> int:
+        """
+        Returns the total number of epochs this model has seen.
+        """
+        return self._epoch
+
+    def set_epoch(self, epoch: int):
+        self._epoch = epoch
+
 
     def __iter__(self):
         """Yields an infinite stream of shuffled dataset indices."""
-        epoch = 0
+        epoch = 0 
         while True:
             g = torch.Generator()
             g.manual_seed(self.seed + epoch)
             indices = torch.randperm(self.len_data, generator=g).tolist()
             yield from indices
+            
+            # update the epoch, but it may have been that this method was called several times
+            # so for consistency, we only want to report the highest epoch reached.
             epoch += 1
+            self._epoch = max(self._epoch, epoch)
+
     
     def __len__(self):
         return self.len_data
@@ -276,26 +322,37 @@ class MaxTokensPerRankCollator:
 
         return all_minibatches
     
-def get_data_loader(**kwargs):
-    # from ipdb import set_trace; set_trace()
-    dataset = JsonlDataset(kwargs['data_path'])
-    batch_size = kwargs['batch_size']
-    max_tokens_per_rank = kwargs['max_tokens_per_gpu']
-    seed = kwargs['seed']
-    rank = kwargs.get('rank', None)
-    world_size = kwargs.get('world_size', None)
-    dummy_sample = kwargs.get('dummy_sample', None)
-    num_workers = kwargs.get('num_workers', 4)
+def get_data_loader(
+    data_path: str,
+    batch_size: int,
+    max_tokens_per_gpu: int,
+    seed: int,
+    rank: int | None = None,
+    world_size: int | None = None,
+    dummy_sample: int | None = None,  # TODO: separate this concept from the data loader
+    num_workers: int = 0,
+
+    # TODO: refactor this concept so that we instead use a regular sampler, and when this is enabled
+    # we just keep looping without ever stopping. This should have the same effect as the current implementation.
+    use_infinite_sampler: bool = True,   # keep this true for now for backwards compatibility
+):
+    dataset = JsonlDataset(data_path)
+    sampler = InfiniteSampler(len(dataset), seed=seed) if use_infinite_sampler else EpochSampler(len(dataset), seed=seed)
     
-    return DataLoader(dataset, 
-                      batch_size, 
-                      sampler=InfiniteSampler(len(dataset), seed=seed),
-                      collate_fn=MaxTokensPerRankCollator(max_tokens_per_rank, 
-                                                          rank=rank, 
-                                                          world_size=world_size, 
-                                                          dummy_sample=dummy_sample),
-                      num_workers=num_workers,
-                      persistent_workers=(num_workers > 0))
+    return DataLoader(
+        dataset, 
+        batch_size, 
+        sampler=sampler,
+        collate_fn=MaxTokensPerRankCollator(
+            max_tokens_per_gpu, 
+            rank=rank, 
+            world_size=world_size, 
+            dummy_sample=dummy_sample,
+        ),
+        num_workers=num_workers,
+        persistent_workers=(num_workers > 0),
+        drop_last=False,
+    )
 
 if __name__ == "__main__":
     data_loader = get_data_loader(data_path="test.jsonl",

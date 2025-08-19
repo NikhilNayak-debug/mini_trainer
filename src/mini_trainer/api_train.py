@@ -2,51 +2,14 @@
 
 import subprocess
 import os
+import json
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-from enum import Enum
+
+from mini_trainer.training_types import TorchrunArgs, TrainingArgs
 
 
 logger = logging.getLogger(__name__)
-
-
-class LogLevel(str, Enum):
-    """Logging level enum."""
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
-
-
-@dataclass
-class TorchrunArgs:
-    """Arguments for torchrun distributed training."""
-    nnodes: int = 1
-    nproc_per_node: int = 8
-    node_rank: int = 0
-    rdzv_id: int = 420
-    rdzv_endpoint: str = "0.0.0.0:12345"
-
-
-@dataclass
-class TrainingArgs:
-    """Arguments for training configuration."""
-    model_name_or_path: str = "Qwen/Qwen2.5-1.5B-Instruct"
-    data_path: str = "test.jsonl"
-    batch_size: int = 1024
-    max_tokens_per_gpu: int = 10000
-    learning_rate: float = 5e-6
-    num_warmup_steps: int = 10
-    lr_scheduler: str = "constant_with_warmup"
-    seed: int = 42
-    use_liger_kernels: bool = False
-    orthogonal_subspace_learning: bool = False
-    output_dir: str = "./output"
-    logging_level: LogLevel = LogLevel.INFO
-    min_samples_per_checkpoint: int = 1000
 
 
 class StreamablePopen:
@@ -138,10 +101,15 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
         f"--learning-rate={train_args.learning_rate}",
         f"--num-warmup-steps={train_args.num_warmup_steps}",
         f"--lr-scheduler={train_args.lr_scheduler}",
+        f"--lr-scheduler-kwargs={json.dumps(train_args.lr_scheduler_kwargs) if train_args.lr_scheduler_kwargs else '{}'}",
         f"--seed={train_args.seed}",
         f"--output-dir={train_args.output_dir}",
         f"--logging-level={train_args.logging_level.value}",
         f"--min-samples-per-checkpoint={train_args.min_samples_per_checkpoint}",
+        f"--training-mode={train_args.training_mode.value}",
+        f"--max-epochs={train_args.max_epochs}",
+        f"--max-steps={train_args.max_steps}",
+        f"--max-tokens={train_args.max_tokens}",
     ]
     
     # Add optional boolean flags
@@ -150,6 +118,15 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
     
     if train_args.orthogonal_subspace_learning:
         command.append("--orthogonal-subspace-learning")
+    
+    if train_args.use_infinite_sampler:
+        command.append("--use-infinite-sampler")
+    
+    if train_args.checkpoint_at_epoch:
+        command.append("--checkpoint-at-epoch")
+    
+    if train_args.save_final_checkpoint:
+        command.append("--save-final-checkpoint")
     
     logger.info("Running training command as subprocess: %s", " ".join(command))
     

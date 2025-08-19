@@ -369,19 +369,219 @@ class TestGetDataLoader:
         os.unlink(temp_path)
     
     @patch('mini_trainer.sampler.dist.get_rank', return_value=0)
-    @patch('mini_trainer.sampler.dist.get_world_size', return_value=2)
-    def test_get_data_loader_basic(self, mock_world_size, mock_rank, temp_data_file):
+    @patch('mini_trainer.sampler.dist.get_world_size', return_value=1)
+    def test_get_data_loader_basic_epoch_sampler(self, mock_world_size, mock_rank, temp_data_file):
         """Test basic data loader creation."""
+        expected_batch_size = 4
+        expected_grad_accum_steps = 1
+
         loader = get_data_loader(
             data_path=temp_data_file,
             batch_size=4,
             max_tokens_per_gpu=500,
-            seed=42
+            seed=42,
+            use_infinite_sampler=False,
         )
-        
+        # asserts that loading the model works properly
         assert loader is not None
-        assert loader.batch_size == 4
-        assert loader.num_workers == 4
+        assert loader.batch_size == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        # get an iterator and fetch one batch
+        loader_it = iter(loader)
+        batch = next(loader_it)
+
+        # we expect there to only be a single grad accum step, since the
+        # temp data file creates 100-token samples, so batch-size of 4
+        # should only return a single batch
+        assert len(batch) == expected_grad_accum_steps
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+
+        # now pop another 2 batches off, the last should either not exist or only have 2 samples
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == 2  # we now expect the last 2 samples to be here
+
+        # now we should have seen all samples, but we need to incremenet the epoch
+        assert loader.sampler.completed_epochs == 0
+        loader.sampler.set_epoch(1)
+        assert loader.sampler.completed_epochs == 1
+
+
+    @patch('mini_trainer.sampler.dist.get_rank', return_value=0)
+    @patch('mini_trainer.sampler.dist.get_world_size', return_value=1)
+    def test_get_data_loader_basic_infinite_sampler(self, mock_world_size, mock_rank, temp_data_file):
+        """Test basic data loader creation."""
+        expected_batch_size = 8
+        expected_grad_accum_steps = 1
+
+        loader = get_data_loader(
+            data_path=temp_data_file,
+            batch_size=expected_batch_size,
+            max_tokens_per_gpu=50000,  # so we dont accumulate in this test
+            seed=42,
+            use_infinite_sampler=True,
+        )
+        # asserts that loading the model works properly
+        assert loader is not None
+        assert loader.batch_size == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        # get an iterator and fetch one batch
+        loader_it = iter(loader)
+        batch = next(loader_it)
+        assert len(batch) == expected_grad_accum_steps
+
+        # we expect there to only be a single grad accum step, since the
+        # temp data file creates 10 100-token samples, so batch-size 8 w/ 100 tokens per sample
+        # should only return a single batch
+        assert len(batch) == expected_grad_accum_steps
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        # now after the next batch, we should expect to see the same length,
+        # but now it should have incremented the epoch
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_batch_size
+        assert loader.sampler.completed_epochs == 1
+
+        # but we can reset it to 0
+        loader.sampler.set_epoch(0)
+        assert loader.sampler.completed_epochs == 0
+        
+        # since we went 8 + 8 ==> 16, so adding another 8 should give us 24, 
+        # so we expect it to increment, but it has an internal counter that will override it
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_batch_size
+        assert loader.sampler.completed_epochs == 2
+
+
+
+    @patch('mini_trainer.sampler.dist.get_rank', return_value=0)
+    @patch('mini_trainer.sampler.dist.get_world_size', return_value=2)
+    def test_get_data_loader_two_gpus(self, mock_world_size, mock_rank, temp_data_file):
+        """Test basic data loader creation."""
+        expected_batch_size = 8
+        expected_grad_accum_steps = 1
+        expected_leftover_samples = 2
+
+        # first try with an even batch size, so the last step will have 2 samples
+        loader = get_data_loader(
+            data_path=temp_data_file,
+            batch_size=8,
+            max_tokens_per_gpu=500,
+            seed=42,
+            use_infinite_sampler=False,
+        )
+        # asserts that loading the model works properly
+        assert loader is not None
+        assert loader.batch_size == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        # get an iterator and fetch one batch
+        loader_it = iter(loader)
+        batch = next(loader_it)
+
+        # we expect there to only be a single grad accum step, since the
+        # temp data file creates 100-token samples, so batch-size of 4
+        # should only return a single batch
+        assert len(batch) == expected_grad_accum_steps
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_batch_size // mock_world_size()
+        assert loader.sampler.completed_epochs == 0
+
+        # so now the next batch should have 1 sample on each rank
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == expected_leftover_samples // mock_world_size()
+        assert loader.sampler.completed_epochs == 0
+
+
+    @patch('mini_trainer.sampler.dist.get_rank', return_value=1)
+    @patch('mini_trainer.sampler.dist.get_world_size', return_value=2)
+    def test_mock_rank(self, mock_world_size, mock_rank, temp_data_file):
+        assert mock_rank() == 1
+        mock_rank.return_value = 0
+        assert mock_rank() == 0
+
+
+    @patch('mini_trainer.sampler.dist.get_rank', return_value=0)
+    @patch('mini_trainer.sampler.dist.get_world_size', return_value=2)
+    def test_padded_samples_on_last_rank(self, mock_world_size, mock_rank, temp_data_file):
+        """Test basic data loader creation."""
+        expected_batch_size = 9
+        expected_leftover_samples = 1
+
+        # first try with an even batch size, so the last step will have 2 samples
+        loader = get_data_loader(
+            data_path=temp_data_file,
+            batch_size=9,
+            max_tokens_per_gpu=500,
+            seed=42,
+            use_infinite_sampler=False,
+        )
+        # asserts that loading the model works properly
+        assert loader is not None
+        assert loader.batch_size == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        # get an iterator and fetch one batch
+        loader_it = iter(loader)
+        batch = next(loader_it)
+
+        # this will burn up most of the samples
+        minibatch = batch[0]
+        assert minibatch['num_samples'] == (expected_batch_size // mock_world_size()) + 1
+
+        # now there should be 1 batch left, it will most likely be on the first rank
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] > 0
+
+        # next, change our rank to the last to see the difference
+        mock_rank.return_value = 1
+        loader = get_data_loader(
+            data_path=temp_data_file,
+            batch_size=9,
+            max_tokens_per_gpu=500,
+            seed=42,
+            use_infinite_sampler=False,
+        )
+
+        # asserts that loading the model works properly
+        assert loader is not None
+        assert loader.batch_size == expected_batch_size
+        assert loader.sampler.completed_epochs == 0
+
+        # get an iterator and fetch one batch
+        loader_it = iter(loader)
+        batch = next(loader_it)
+
+        # this will burn up most of the samples
+        minibatch = batch[0]
+        assert minibatch['num_samples'] == expected_batch_size // mock_world_size()
+
+        # we expect nothing to be there on the last rank
+        batch = next(loader_it)
+        microbatch = batch[0]
+        assert microbatch['num_samples'] == 0
+        # but we still expect there to be an item
+        assert microbatch["labels"] is not None
+        assert microbatch["input_ids"] is not None
+        assert microbatch["batch_num_loss_counted_tokens"] > 0
+        assert microbatch["num_loss_counted_tokens"] == 0
+
     
     def test_get_data_loader_with_custom_params(self, temp_data_file):
         """Test data loader with custom parameters."""

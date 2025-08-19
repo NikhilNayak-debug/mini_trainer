@@ -8,11 +8,14 @@ from unittest.mock import patch, MagicMock, call
 import subprocess
 
 from mini_trainer.api_train import (
-    TorchrunArgs,
-    TrainingArgs,
-    LogLevel,
     run_training,
     StreamablePopen
+)
+from mini_trainer.training_types import (
+    TorchrunArgs,
+    TrainingArgs,
+    LogLevelEnum,
+    TrainingMode
 )
 
 
@@ -57,8 +60,15 @@ class TestDataclasses:
         assert args.use_liger_kernels is False
         assert args.orthogonal_subspace_learning is False
         assert args.output_dir == "./output"
-        assert args.logging_level == LogLevel.INFO
+        assert args.logging_level == LogLevelEnum.INFO
         assert args.min_samples_per_checkpoint == 1000
+        assert args.use_infinite_sampler is True
+        assert args.training_mode == TrainingMode.INFINITE
+        assert args.max_epochs == 0
+        assert args.max_steps == 0
+        assert args.max_tokens == 0
+        assert args.checkpoint_at_epoch is False
+        assert args.save_final_checkpoint is False
     
     def test_training_args_custom(self):
         """Test TrainingArgs with custom values."""
@@ -68,14 +78,14 @@ class TestDataclasses:
             batch_size=512,
             learning_rate=1e-4,
             use_liger_kernels=True,
-            logging_level=LogLevel.DEBUG
+            logging_level=LogLevelEnum.DEBUG
         )
         assert args.model_name_or_path == "gpt2"
         assert args.data_path == "/path/to/data.jsonl"
         assert args.batch_size == 512
         assert args.learning_rate == 1e-4
         assert args.use_liger_kernels is True
-        assert args.logging_level == LogLevel.DEBUG
+        assert args.logging_level == LogLevelEnum.DEBUG
 
 
 class TestStreamablePopen:
@@ -441,18 +451,30 @@ class TestRunTraining:
             mock_popen.terminate.assert_called_once()
 
 
-class TestLogLevel:
-    """Test the LogLevel enum."""
+class TestEnums:
+    """Test the enum types."""
     
     def test_log_level_values(self):
-        """Test that LogLevel enum has correct values."""
-        assert LogLevel.DEBUG.value == "DEBUG"
-        assert LogLevel.INFO.value == "INFO"
-        assert LogLevel.WARNING.value == "WARNING"
-        assert LogLevel.ERROR.value == "ERROR"
-        assert LogLevel.CRITICAL.value == "CRITICAL"
+        """Test that LogLevelEnum has correct values."""
+        assert LogLevelEnum.DEBUG.value == "DEBUG"
+        assert LogLevelEnum.INFO.value == "INFO"
+        assert LogLevelEnum.WARNING.value == "WARNING"
+        assert LogLevelEnum.ERROR.value == "ERROR"
+        assert LogLevelEnum.CRITICAL.value == "CRITICAL"
     
     def test_log_level_string_comparison(self):
-        """Test that LogLevel can be compared with strings."""
-        assert LogLevel.INFO == "INFO"
-        assert LogLevel.DEBUG == "DEBUG"
+        """Test that LogLevelEnum can be compared with strings."""
+        assert LogLevelEnum.INFO == "INFO"
+        assert LogLevelEnum.DEBUG == "DEBUG"
+    
+    def test_training_mode_values(self):
+        """Test that TrainingMode enum has correct values."""
+        assert TrainingMode.EPOCH.value == "epoch"
+        assert TrainingMode.STEP.value == "step"
+        assert TrainingMode.TOKEN.value == "token"
+        assert TrainingMode.INFINITE.value == "infinite"
+    
+    def test_training_mode_string_comparison(self):
+        """Test that TrainingMode can be compared with strings."""
+        assert TrainingMode.EPOCH == "epoch"
+        assert TrainingMode.INFINITE == "infinite"

@@ -257,11 +257,13 @@ class TestSetupTrainingComponents:
         # Check optimizer wrapping
         mock_optim_wrapper.assert_called_once_with(mock_optimizer, mock_wrapped_model)
         
-        # Check scheduler creation
+        # Check scheduler creation with new parameters
         mock_scheduler.assert_called_once_with(
             name="constant_with_warmup",
             optimizer=mock_wrapped_optimizer,
-            num_warmup_steps=10
+            num_warmup_steps=10,
+            num_training_steps=None,
+            scheduler_specific_kwargs={}
         )
         
         # Check scheduler properties and step
@@ -294,7 +296,9 @@ class TestSetupTrainingComponents:
         mock_scheduler.assert_called_once_with(
             name="cosine",
             optimizer=mock_optimizer,
-            num_warmup_steps=100
+            num_warmup_steps=100,
+            num_training_steps=None,
+            scheduler_specific_kwargs={}
         )
 
 

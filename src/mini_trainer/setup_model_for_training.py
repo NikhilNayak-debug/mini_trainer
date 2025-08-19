@@ -1,4 +1,5 @@
 import math
+from typing import Optional, Dict, Any
 import torch
 import torch.distributed as dist
 from torch.distributed.fsdp import MixedPrecisionPolicy, fully_shard
@@ -214,7 +215,28 @@ def setup_model(
     # torch.compile(model)
     return model
 
-def setup_training_components(model, **kwargs):
+def setup_training_components(
+    model: torch.nn.Module,
+    learning_rate: float,
+    num_warmup_steps: int,
+    lr_scheduler: str,
+    num_training_steps: Optional[int] = None,
+    scheduler_kwargs: Optional[Dict[str, Any]] = None,
+) -> tuple[torch.nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
+    """
+    Set up training components including model wrapping, optimizer, and learning rate scheduler.
+    
+    Args:
+        model: The model to be trained
+        learning_rate: Peak learning rate for the optimizer
+        num_warmup_steps: Number of warmup steps for the LR scheduler
+        lr_scheduler: Type of learning rate scheduler to use
+        num_training_steps: Total number of training steps (required for some schedulers)
+        scheduler_kwargs: Additional scheduler-specific keyword arguments
+    
+    Returns:
+        Tuple of (wrapped_model, optimizer, lr_scheduler)
+    """
     from transformers import get_scheduler
     
     # Using FSDP2 wrapper
@@ -223,16 +245,22 @@ def setup_training_components(model, **kwargs):
     
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=kwargs['learning_rate'],
+        lr=learning_rate,
         betas=(0.9, 0.95),
         weight_decay=0.0,
     )
     from mini_trainer.svd_utils import optim_wrapper
     optimizer = optim_wrapper(optimizer, model)
+    # Prepare scheduler kwargs
+    if scheduler_kwargs is None:
+        scheduler_kwargs = {}
+    
     lr_scheduler = get_scheduler(
-        name=kwargs['lr_scheduler'],
+        name=lr_scheduler,
         optimizer=optimizer,
-        num_warmup_steps=kwargs['num_warmup_steps'],
+        num_warmup_steps=num_warmup_steps,
+        num_training_steps=num_training_steps,
+        scheduler_specific_kwargs=scheduler_kwargs,
     )
     lr_scheduler.split_batches = True
     lr_scheduler.step() #the scheduler starts at 0 and there's no learning.
