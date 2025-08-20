@@ -113,6 +113,38 @@ def reached_stop_condition(
             raise ValueError(f"Unknown training mode: {training_mode}")
 
 
+def parse_dtype(dtype_input: str | None) -> torch.dtype | None:
+    """Convert string dtype to torch dtype.
+    
+    Args:
+        dtype_input: String representation of dtype, torch.dtype object, or None
+        
+    Returns:
+        torch.dtype object or None
+        
+    Raises:
+        ValueError: If dtype_input is an unsupported string
+        TypeError: If dtype_input is not str, torch.dtype, or None
+    """
+    if dtype_input is None:
+        return None
+    if isinstance(dtype_input, str):
+        dtype_map = {
+            'float16': torch.float16,
+            'bfloat16': torch.bfloat16,
+            'float32': torch.float32,
+            'float64': torch.float64,
+        }
+        if dtype_input not in dtype_map:
+            raise ValueError(f"Unsupported dtype string: '{dtype_input}'. Supported dtypes: {list(dtype_map.keys())}")
+        return dtype_map[dtype_input]
+    elif hasattr(dtype_input, 'dtype') or str(type(dtype_input)).startswith("<class 'torch."):
+        # Already a torch dtype
+        return dtype_input
+    else:
+        raise TypeError(f"Invalid dtype type: {type(dtype_input)}. Expected str, None, or torch.dtype, got {dtype_input}")
+
+
 def validate_training_mode(
     training_mode: TrainingMode = TrainingMode.INFINITE,
     max_epochs: int = 0,
@@ -366,6 +398,8 @@ def main(
               "This should be a comma-separated list of patterns. "
               "For example, 'self_attn.q_proj,self_attn.k_proj,mlp.gate_proj'")
     )] = None,
+    osft_upcast_dtype: Annotated[str | None, Option(help="Upcast dtype for OSFT computations. Can be 'float16', 'bfloat16', 'float32', etc.")] = "float32",
+    osft_output_dtype: Annotated[str | None, Option(help="Output dtype for OSFT. If None, uses original model dtype. Can be 'float16', 'bfloat16', 'float32', etc.")] = None,
 
 
     output_dir: Annotated[str, Option(help="Directory to save checkpoints and logs (required)")] = ...,
@@ -396,6 +430,10 @@ def main(
         if osft_target_patterns:
             osft_target_patterns = osft_target_patterns.replace("'", "").replace('"', "").replace(" ", "").split(",")
     
+    # Convert string dtypes to torch dtypes
+    osft_upcast_dtype_torch = parse_dtype(osft_upcast_dtype)
+    osft_output_dtype_torch = parse_dtype(osft_output_dtype)
+    
     # Log parameters only on rank 0
     rank = dist.get_rank()
     if rank == 0:
@@ -412,6 +450,8 @@ def main(
             "osft": osft,
             "osft_rank_ratio": osft_rank_ratio,
             "osft_target_patterns": osft_target_patterns,
+            "osft_upcast_dtype": osft_upcast_dtype,
+            "osft_output_dtype": osft_output_dtype,
             "output_dir": output_dir,
             "logging_level": logging_level.value,
             "min_samples_per_checkpoint": min_samples_per_checkpoint,
@@ -469,6 +509,8 @@ def main(
         rank=rank,
         osft_rank_ratio=osft_rank_ratio,
         osft_target_patterns=osft_target_patterns,
+        osft_upcast_dtype=osft_upcast_dtype_torch,
+        osft_output_dtype=osft_output_dtype_torch,
     )
     model, optimizer, lr_scheduler = setup_training_components(
         model=model,

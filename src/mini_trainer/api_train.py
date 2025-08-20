@@ -126,6 +126,10 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
         command.append(f"--osft-rank-ratio={train_args.osft_rank_ratio}")
         if train_args.osft_target_patterns:
             command.append(f"--osft-target-patterns={','.join(train_args.osft_target_patterns)}")
+        if train_args.osft_upcast_dtype is not None:
+            command.append(f"--osft-upcast-dtype={train_args.osft_upcast_dtype}")
+        if train_args.osft_output_dtype is not None:
+            command.append(f"--osft-output-dtype={train_args.osft_output_dtype}")
     
     if train_args.checkpoint_at_epoch:
         command.append("--checkpoint-at-epoch")

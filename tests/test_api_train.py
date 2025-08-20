@@ -59,6 +59,8 @@ class TestDataclasses:
         assert args.seed == 42
         assert args.use_liger_kernels is False
         assert args.osft is False
+        assert args.osft_upcast_dtype == "float32"
+        assert args.osft_output_dtype is None
         assert args.output_dir == "./output"
         assert args.logging_level == LogLevelEnum.INFO
         assert args.min_samples_per_checkpoint is None
@@ -814,6 +816,149 @@ sys.exit(1)
                             break
                     
                     assert level_arg == f"--logging-level={level.value}"
+
+
+class TestOSFTDtypeParameters:
+    """Test the new OSFT dtype parameters."""
+    
+    def test_osft_dtype_defaults(self):
+        """Test that OSFT dtype parameters have correct defaults."""
+        args = TrainingArgs()
+        assert args.osft_upcast_dtype == "float32"
+        assert args.osft_output_dtype is None
+    
+    def test_osft_dtype_custom_values(self):
+        """Test that OSFT dtype parameters accept custom values."""
+        args = TrainingArgs(
+            osft_upcast_dtype="bfloat16",
+            osft_output_dtype="float16"
+        )
+        assert args.osft_upcast_dtype == "bfloat16"
+        assert args.osft_output_dtype == "float16"
+    
+    def test_osft_dtype_none_values(self):
+        """Test that OSFT dtype parameters accept None values."""
+        args = TrainingArgs(
+            osft_upcast_dtype=None,
+            osft_output_dtype=None
+        )
+        assert args.osft_upcast_dtype is None
+        assert args.osft_output_dtype is None
+    
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_dtype_command_construction_with_defaults(self, mock_popen_class):
+        """Test that OSFT dtype parameters are passed to command with defaults."""
+        mock_popen = MagicMock()
+        mock_popen.poll.return_value = 0
+        mock_popen_class.return_value = mock_popen
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                osft=True,
+                osft_rank_ratio=0.5,
+                # Use defaults: osft_upcast_dtype="float32", osft_output_dtype=None
+            )
+
+            run_training(torch_args, train_args)
+
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            # Should include upcast_dtype with default value
+            assert "--osft-upcast-dtype=float32" in command
+            # Should NOT include output_dtype since it's None
+            assert not any("--osft-output-dtype" in arg for arg in command)
+    
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_dtype_command_construction_with_custom_values(self, mock_popen_class):
+        """Test that OSFT dtype parameters are passed to command with custom values."""
+        mock_popen = MagicMock()
+        mock_popen.poll.return_value = 0
+        mock_popen_class.return_value = mock_popen
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                osft=True,
+                osft_rank_ratio=0.5,
+                osft_upcast_dtype="bfloat16",
+                osft_output_dtype="float16"
+            )
+
+            run_training(torch_args, train_args)
+
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            assert "--osft-upcast-dtype=bfloat16" in command
+            assert "--osft-output-dtype=float16" in command
+    
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_dtype_command_construction_with_none_values(self, mock_popen_class):
+        """Test that OSFT dtype parameters are not passed when None."""
+        mock_popen = MagicMock()
+        mock_popen.poll.return_value = 0
+        mock_popen_class.return_value = mock_popen
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                osft=True,
+                osft_rank_ratio=0.5,
+                osft_upcast_dtype=None,
+                osft_output_dtype=None
+            )
+
+            run_training(torch_args, train_args)
+
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            # Neither dtype parameter should be in command when None
+            assert not any("--osft-upcast-dtype" in arg for arg in command)
+            assert not any("--osft-output-dtype" in arg for arg in command)
+    
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_dtype_not_passed_when_osft_disabled(self, mock_popen_class):
+        """Test that OSFT dtype parameters are not passed when OSFT is disabled."""
+        mock_popen = MagicMock()
+        mock_popen.poll.return_value = 0
+        mock_popen_class.return_value = mock_popen
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torch_args = TorchrunArgs()
+            train_args = TrainingArgs(
+                output_dir=tmpdir,
+                osft=False,  # OSFT disabled
+                osft_upcast_dtype="bfloat16",
+                osft_output_dtype="float16"
+            )
+
+            run_training(torch_args, train_args)
+
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            # No OSFT parameters should be passed when OSFT is disabled
+            assert "--osft" not in command
+            assert not any("--osft-upcast-dtype" in arg for arg in command)
+            assert not any("--osft-output-dtype" in arg for arg in command)
+    
+    def test_osft_dtype_all_supported_values(self):
+        """Test that all supported dtype string values work."""
+        supported_dtypes = ["float16", "bfloat16", "float32", "float64"]
+        
+        for dtype in supported_dtypes:
+            args = TrainingArgs(
+                osft_upcast_dtype=dtype,
+                osft_output_dtype=dtype
+            )
+            assert args.osft_upcast_dtype == dtype
+            assert args.osft_output_dtype == dtype
     
     def test_numeric_parameters_precision(self):
         """Test that numeric parameters maintain precision when passed."""
