@@ -19,7 +19,7 @@ from . import utils
 
 # Export main API functions for convenience
 from .api_train import run_training
-from .training_types import TorchrunArgs, TrainingArgs, LogLevelEnum, TrainingMode
+from .training_types import TorchrunArgs, TrainingArgs, TrainingMode
 
 __all__ = [
     "api_train",
@@ -36,6 +36,5 @@ __all__ = [
     "run_training",
     "TorchrunArgs",
     "TrainingArgs",
-    "LogLevelEnum",
     "TrainingMode",
 ]

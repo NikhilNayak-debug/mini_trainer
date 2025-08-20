@@ -18,7 +18,7 @@ from unittest.mock import patch, MagicMock, call
 import subprocess
 
 from mini_trainer.api_train import run_training, StreamablePopen
-from mini_trainer.training_types import TorchrunArgs, TrainingArgs, LogLevelEnum, TrainingMode
+from mini_trainer.training_types import TorchrunArgs, TrainingArgs, TrainingMode
 from mini_trainer.svd_utils import (
     auto_generate_target_svd_config, 
     get_model_config, 
@@ -32,60 +32,75 @@ from mini_trainer.setup_model_for_training import setup_model
 
 class TestOSFTAPIValidation:
     """Test OSFT parameter validation in the API."""
-    
-    def test_osft_requires_rank_ratio(self):
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_requires_rank_ratio(self, mock_popen_class):
         """Test that osft=True requires osft_rank_ratio to be provided."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             # osft=True but osft_rank_ratio=None should raise error
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=None  # This should cause an error
             )
             
-            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
-                mock_popen = MagicMock()
-                # it should not even run this, so return value doesn't matter here
-                mock_popen.poll.return_value = 0
-                mock_popen_class.return_value = mock_popen
-                
-                with pytest.raises(ValueError, match="osft_rank_ratio is required when osft is True"):
-                    run_training(torch_args, train_args)
-                
-                # shouldnt have even gotten run
-                assert mock_popen_class.call_count == 0
+            mock_popen = MagicMock()
+            # it should not even run this, so return value doesn't matter here
+            mock_popen.poll.return_value = 0
+            mock_popen_class.return_value = mock_popen
+            
+            with pytest.raises(ValueError, match="osft_rank_ratio is required when osft is True"):
+                run_training(torch_args, train_args)
+            
+            # shouldnt have even gotten run
+            assert mock_popen_class.call_count == 0
             
     
-    def test_osft_with_valid_rank_ratio(self):
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_with_valid_rank_ratio(self, mock_popen_class):
         """Test that osft=True with valid rank_ratio passes validation."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.5  # Valid ratio
             )
             
-            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
-                mock_popen = MagicMock()
-                mock_popen.poll.return_value = 0  # Success
-                mock_popen_class.return_value = mock_popen
-                
-                run_training(torch_args, train_args)
-                
-                # Verify command includes osft parameters
-                call_args = mock_popen_class.call_args
-                _, command = call_args[0]
-                
-                assert "--osft" in command
-                assert "--osft-rank-ratio=0.5" in command
+            mock_popen = MagicMock()
+            mock_popen.poll.return_value = 0  # Success
+            mock_popen_class.return_value = mock_popen
+            
+            run_training(torch_args, train_args)
+            
+            # Verify command includes osft parameters
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            assert "--osft" in command
+            assert "--osft-rank-ratio=0.5" in command
+            assert mock_popen_class.call_count > 0
     
     def test_osft_rank_ratio_not_required_when_osft_false(self):
         """Test that osft_rank_ratio is not required when osft=False."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=False,
                 osft_rank_ratio=None  # This should be fine
@@ -105,49 +120,60 @@ class TestOSFTAPIValidation:
                 
                 assert "--osft" not in command
                 assert all(not arg.startswith("--osft-rank-ratio") for arg in command)
+                assert mock_popen_class.call_count > 0
     
-    def test_osft_target_patterns_passed_through(self):
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_target_patterns_passed_through(self, mock_popen_class):
         """Test that osft_target_patterns are correctly passed through the API."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             test_patterns = ["self_attn.q_proj", "self_attn.k_proj", "mlp.gate_proj"]
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.75,
                 osft_target_patterns=test_patterns
             )
             
-            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
-                mock_popen = MagicMock()
-                mock_popen.poll.return_value = 0
-                mock_popen_class.return_value = mock_popen
-                
-                run_training(torch_args, train_args)
-                
-                # Verify command includes target patterns
-                call_args = mock_popen_class.call_args
-                _, command = call_args[0]
-                
-                assert "--osft" in command
-                assert "--osft-rank-ratio=0.75" in command
-                # Find the target patterns argument
-                patterns_arg = None
-                for arg in command:
-                    if arg.startswith("--osft-target-patterns="):
-                        patterns_arg = arg
-                        break
-                
-                assert patterns_arg is not None
-                # The patterns should be passed as a list string
-                expected = "--osft-target-patterns=self_attn.q_proj,self_attn.k_proj,mlp.gate_proj"
-                assert patterns_arg == expected
+            mock_popen = MagicMock()
+            mock_popen.poll.return_value = 0
+            mock_popen_class.return_value = mock_popen
+            
+            run_training(torch_args, train_args)
+            
+            # Verify command includes target patterns
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            assert "--osft" in command
+            assert "--osft-rank-ratio=0.75" in command
+            # Find the target patterns argument
+            patterns_arg = None
+            for arg in command:
+                if arg.startswith("--osft-target-patterns="):
+                    patterns_arg = arg
+                    break
+            
+            assert patterns_arg is not None
+            # The patterns should be passed as a list string
+            expected = "--osft-target-patterns=self_attn.q_proj,self_attn.k_proj,mlp.gate_proj"
+            assert patterns_arg == expected
     
     def test_osft_target_patterns_empty_list(self):
         """Test that empty osft_target_patterns list is handled correctly."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.5,
@@ -174,18 +200,54 @@ class TestOSFTAPIValidation:
                 
                 assert patterns_arg is None
     
-    def test_osft_target_patterns_none_not_passed(self):
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_osft_target_patterns_none_not_passed(self, mock_popen_class):
         """Test that None osft_target_patterns is not passed to command."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.5,
                 osft_target_patterns=None  # None should not be passed
             )
             
-            with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
+            mock_popen = MagicMock()
+            mock_popen.poll.return_value = 0
+            mock_popen_class.return_value = mock_popen
+            
+            run_training(torch_args, train_args)
+            
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            
+            # None should result in no target patterns argument
+            assert all(not arg.startswith("--osft-target-patterns") for arg in command)
+    
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_various_rank_ratios(self, mock_popen_class):
+        """Test that different rank ratios are correctly passed."""
+        rank_ratios = [0.1, 0.25, 0.5, 0.75, 0.9, 1.0]
+        
+        for ratio in rank_ratios:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                torch_args = TorchrunArgs(nproc_per_node=8)
+                train_args = TrainingArgs(
+                    model_name_or_path="test-model",
+                    data_path="test.jsonl",
+                    batch_size=32,
+                    max_tokens_per_gpu=1000,
+                    learning_rate=1e-5,
+                    output_dir=tmpdir,
+                    osft=True,
+                    osft_rank_ratio=ratio
+                )
+                
                 mock_popen = MagicMock()
                 mock_popen.poll.return_value = 0
                 mock_popen_class.return_value = mock_popen
@@ -195,33 +257,7 @@ class TestOSFTAPIValidation:
                 call_args = mock_popen_class.call_args
                 _, command = call_args[0]
                 
-                # None should result in no target patterns argument
-                assert all(not arg.startswith("--osft-target-patterns") for arg in command)
-    
-    def test_various_rank_ratios(self):
-        """Test that different rank ratios are correctly passed."""
-        rank_ratios = [0.1, 0.25, 0.5, 0.75, 0.9, 1.0]
-        
-        for ratio in rank_ratios:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                torch_args = TorchrunArgs()
-                train_args = TrainingArgs(
-                    output_dir=tmpdir,
-                    osft=True,
-                    osft_rank_ratio=ratio
-                )
-                
-                with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
-                    mock_popen = MagicMock()
-                    mock_popen.poll.return_value = 0
-                    mock_popen_class.return_value = mock_popen
-                    
-                    run_training(torch_args, train_args)
-                    
-                    call_args = mock_popen_class.call_args
-                    _, command = call_args[0]
-                    
-                    assert f"--osft-rank-ratio={ratio}" in command
+                assert f"--osft-rank-ratio={ratio}" in command
 
 
 class TestSVDConfigGeneration:
@@ -413,60 +449,60 @@ class TestSVDModelCreation:
 class TestSetupModelIntegration:
     """Test integration of OSFT options with setup_model function."""
     
-    def test_osft_params_flow_through_setup(self):
+    @patch('mini_trainer.setup_model_for_training.log_rank_0')
+    @patch('mini_trainer.setup_model_for_training.AutoModelForCausalLM')
+    @patch('mini_trainer.setup_model_for_training.AutoTokenizer')
+    @patch('mini_trainer.svd_utils.auto_generate_target_svd_config')
+    @patch('mini_trainer.svd_utils.create_svd_model_class')
+    def test_osft_params_flow_through_setup(self, mock_svd_class, mock_auto_config, mock_tokenizer_cls, mock_model_cls, mock_log):
         """Test that OSFT parameters flow through the setup correctly."""
         # Test that SVD model creation gets the right parameters
-        with patch('mini_trainer.svd_utils.create_svd_model_class') as mock_svd_class:
-            with patch('mini_trainer.svd_utils.auto_generate_target_svd_config') as mock_auto_config:
-                mock_auto_config.return_value = {"layer.weight": 10}
-                
-                # Mock the SVD model class
-                mock_svd_model_cls = MagicMock()
-                mock_svd_instance = MagicMock()
-                mock_svd_instance.config = MagicMock()
-                mock_svd_instance.config.vocab_size = 1000
-                mock_svd_instance.dtype = torch.float32
-                
-                # Setup from_pretrained to return a properly configured model
-                def from_pretrained_side_effect(*args, **kwargs):
-                    # Store the kwargs for verification
-                    mock_svd_model_cls.last_kwargs = kwargs
-                    return mock_svd_instance
-                
-                mock_svd_model_cls.from_pretrained.side_effect = from_pretrained_side_effect
-                mock_svd_class.return_value = mock_svd_model_cls
-                
-                # Mock tokenizer and base model
-                with patch('mini_trainer.setup_model_for_training.AutoTokenizer') as mock_tokenizer_cls:
-                    with patch('mini_trainer.setup_model_for_training.AutoModelForCausalLM') as mock_model_cls:
-                        with patch('mini_trainer.setup_model_for_training.log_rank_0'):
-                            mock_tokenizer = MagicMock()
-                            mock_tokenizer.__len__ = MagicMock(return_value=1000)
-                            mock_tokenizer.pad_token_id = 0
-                            mock_tokenizer_cls.from_pretrained.return_value = mock_tokenizer
-                            
-                            mock_base_model = MagicMock()
-                            mock_base_model.config = MagicMock()
-                            mock_base_model.config.vocab_size = 1000
-                            mock_model_cls.from_pretrained.return_value = mock_base_model
-                            
-                            # Call setup_model with OSFT params
-                            model = setup_model(
-                                osft=True,
-                                rank=0,
-                                osft_rank_ratio=0.75,
-                                osft_target_patterns=["custom.layer1", "custom.layer2"],
-                                model_name_or_path="test-model"
-                            )
-                            
-                            # Verify the SVD model class was created
-                            mock_svd_class.assert_called_once()
-                            
-                            # Verify from_pretrained was called with the right params
-                            assert 'rank_ratio' in mock_svd_model_cls.last_kwargs
-                            assert mock_svd_model_cls.last_kwargs['rank_ratio'] == 0.75
-                            assert 'target_patterns' in mock_svd_model_cls.last_kwargs
-                            assert mock_svd_model_cls.last_kwargs['target_patterns'] == ["custom.layer1", "custom.layer2"]
+        mock_auto_config.return_value = {"layer.weight": 10}
+        
+        # Mock the SVD model class
+        mock_svd_model_cls = MagicMock()
+        mock_svd_instance = MagicMock()
+        mock_svd_instance.config = MagicMock()
+        mock_svd_instance.config.vocab_size = 1000
+        mock_svd_instance.dtype = torch.float32
+        
+        # Setup from_pretrained to return a properly configured model
+        def from_pretrained_side_effect(*args, **kwargs):
+            # Store the kwargs for verification
+            mock_svd_model_cls.last_kwargs = kwargs
+            return mock_svd_instance
+        
+        mock_svd_model_cls.from_pretrained.side_effect = from_pretrained_side_effect
+        mock_svd_class.return_value = mock_svd_model_cls
+        
+        # Mock tokenizer and base model
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.__len__ = MagicMock(return_value=1000)
+        mock_tokenizer.pad_token_id = 0
+        mock_tokenizer_cls.from_pretrained.return_value = mock_tokenizer
+        
+        mock_base_model = MagicMock()
+        mock_base_model.config = MagicMock()
+        mock_base_model.config.vocab_size = 1000
+        mock_model_cls.from_pretrained.return_value = mock_base_model
+        
+        # Call setup_model with OSFT params
+        model = setup_model(
+            osft=True,
+            rank=0,
+            osft_rank_ratio=0.75,
+            osft_target_patterns=["custom.layer1", "custom.layer2"],
+            model_name_or_path="test-model"
+        )
+        
+        # Verify the SVD model class was created
+        mock_svd_class.assert_called_once()
+        
+        # Verify from_pretrained was called with the right params
+        assert 'rank_ratio' in mock_svd_model_cls.last_kwargs
+        assert mock_svd_model_cls.last_kwargs['rank_ratio'] == 0.75
+        assert 'target_patterns' in mock_svd_model_cls.last_kwargs
+        assert mock_svd_model_cls.last_kwargs['target_patterns'] == ["custom.layer1", "custom.layer2"]
 
 
 class TestEndToEndOSFT:

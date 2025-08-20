@@ -17,9 +17,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    AutoTokenizer,
     LlamaConfig,
     LlamaForCausalLM,
     MistralConfig,
@@ -148,34 +145,34 @@ class TestModelInitialization:
                 # TODO: make sure transformer blocks were also wrapped
                 assert mock_shard.called
     
-    def test_training_components_setup_with_tiny_model(self):
+    @patch('mini_trainer.setup_model_for_training.log_rank_0')
+    @patch('mini_trainer.svd_utils.optim_wrapper')
+    @patch('transformers.get_scheduler')
+    @patch('mini_trainer.setup_model_for_training.wrap_fsdp2')
+    def test_training_components_setup_with_tiny_model(self, mock_wrap, mock_sched_fn, mock_opt_wrap, mock_log):
         """Test setting up training components with a tiny model."""
         model, config = create_tiny_llama_model()
         
         # TODO: ensure proper functions were also called
-        with patch('mini_trainer.setup_model_for_training.wrap_fsdp2') as mock_wrap:
-            with patch('transformers.get_scheduler') as mock_sched_fn:
-                with patch('mini_trainer.svd_utils.optim_wrapper') as mock_opt_wrap:
-                    with patch('mini_trainer.setup_model_for_training.log_rank_0'):
-                        mock_wrap.return_value = model
-                        mock_opt_wrap.side_effect = lambda opt, m: opt
-                        
-                        # Create mock scheduler
-                        mock_scheduler = MagicMock()
-                        mock_scheduler.split_batches = False
-                        mock_scheduler.step = MagicMock()
-                        mock_sched_fn.return_value = mock_scheduler
-                        
-                        model, optimizer, scheduler = setup_training_components(
-                            model,
-                            learning_rate=1e-4,
-                            num_warmup_steps=10,
-                            lr_scheduler="constant"
-                        )
-                        
-                        assert model is not None
-                        assert optimizer is not None
-                        assert scheduler is not None
+        mock_wrap.return_value = model
+        mock_opt_wrap.side_effect = lambda opt, m: opt
+        
+        # Create mock scheduler
+        mock_scheduler = MagicMock()
+        mock_scheduler.split_batches = False
+        mock_scheduler.step = MagicMock()
+        mock_sched_fn.return_value = mock_scheduler
+        
+        model, optimizer, scheduler = setup_training_components(
+            model,
+            learning_rate=1e-4,
+            num_warmup_steps=10,
+            lr_scheduler="constant"
+        )
+        
+        assert model is not None
+        assert optimizer is not None
+        assert scheduler is not None
 
 
 class TestSVDModelInitialization:

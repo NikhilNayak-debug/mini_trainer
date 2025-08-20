@@ -28,7 +28,6 @@ def pytest_configure(config):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-
 @pytest.fixture(autouse=True)
 def cleanup_multiprocessing():
     """
@@ -114,30 +113,3 @@ def zero_workers_dataloader(monkeypatch):
     monkeypatch.setattr(sampler, 'get_data_loader', patched_get_data_loader)
     yield
     # Cleanup happens automatically when monkeypatch is torn down
-
-
-@pytest.fixture
-def mock_distributed_env(monkeypatch):
-    """
-    Mock distributed training environment for tests.
-    
-    Sets up mock values for distributed training functions
-    to allow testing without actual multi-GPU setup.
-    """
-    monkeypatch.setenv('RANK', '0')
-    monkeypatch.setenv('WORLD_SIZE', '1')
-    monkeypatch.setenv('LOCAL_RANK', '0')
-    
-    # Mock torch.distributed if needed
-    import torch.distributed as dist
-    
-    if not dist.is_initialized():
-        # Create mock functions
-        monkeypatch.setattr(dist, 'get_rank', lambda: 0)
-        monkeypatch.setattr(dist, 'get_world_size', lambda: 1)
-        monkeypatch.setattr(dist, 'is_initialized', lambda: True)
-    
-    yield
-    
-    # Cleanup
-    monkeypatch.undo()

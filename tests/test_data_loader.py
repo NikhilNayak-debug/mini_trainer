@@ -15,13 +15,15 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock
 from pathlib import Path
+from torch.utils.data import DataLoader
 
 from mini_trainer.sampler import (
     JsonlDataset,
     MaxTokensPerRankCollator,
     get_data_loader,
     mb_collate_fn,
-    reset_minibatches
+    reset_minibatches,
+    EpochSampler
 )
 
 
@@ -330,7 +332,7 @@ class TestGetDataLoader:
         # asserts that loading the model works properly
         assert loader is not None
         assert loader.batch_size == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # get an iterator and fetch one batch
         loader_it = iter(loader)
@@ -342,23 +344,23 @@ class TestGetDataLoader:
         assert len(batch) == expected_grad_accum_steps
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
 
         # now pop another 2 batches off, the last should either not exist or only have 2 samples
         batch = next(loader_it)
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         batch = next(loader_it)
         microbatch = batch[0]
         assert microbatch['num_samples'] == 2  # we now expect the last 2 samples to be here
 
         # now we should have seen all samples, but we need to incremenet the epoch
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
         loader.sampler.set_epoch(1)
-        assert loader.sampler.completed_epochs == 1
+        assert loader.sampler.epoch == 1
 
 
     @patch('mini_trainer.sampler.dist.get_rank', return_value=0)
@@ -377,7 +379,7 @@ class TestGetDataLoader:
         # asserts that loading the model works properly
         assert loader is not None
         assert loader.batch_size == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # get an iterator and fetch one batch
         loader_it = iter(loader)
@@ -390,26 +392,26 @@ class TestGetDataLoader:
         assert len(batch) == expected_grad_accum_steps
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # The next batch should only have 2 samples (10 total - 8 already seen = 2 remaining)
         # After this, the epoch should be complete
         batch = next(loader_it)
         microbatch = batch[0]
         assert microbatch['num_samples'] == 2  # Only 2 samples left in the epoch
-        assert loader.sampler.completed_epochs == 0  # Epoch counter doesn't auto-increment
+        assert loader.sampler.epoch == 0  # Epoch counter doesn't auto-increment
 
         # Iterator should be exhausted now - need to create a new one for next epoch
         # This would typically happen in the training loop
         loader.sampler.set_epoch(1)  # Manually set to next epoch
-        assert loader.sampler.completed_epochs == 1  # Now it's incremented
+        assert loader.sampler.epoch == 1  # Now it's incremented
         loader_it = iter(loader)  # Create new iterator for the new epoch
         
         # Now we should get a full batch again from the new epoch
         batch = next(loader_it)
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_batch_size
-        assert loader.sampler.completed_epochs == 1  # Still at epoch 1
+        assert loader.sampler.epoch == 1  # Still at epoch 1
 
 
 
@@ -431,7 +433,7 @@ class TestGetDataLoader:
         # asserts that loading the model works properly
         assert loader is not None
         assert loader.batch_size == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # get an iterator and fetch one batch
         loader_it = iter(loader)
@@ -443,13 +445,13 @@ class TestGetDataLoader:
         assert len(batch) == expected_grad_accum_steps
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_batch_size // mock_world_size()
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # so now the next batch should have 1 sample on each rank
         batch = next(loader_it)
         microbatch = batch[0]
         assert microbatch['num_samples'] == expected_leftover_samples // mock_world_size()
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
 
     @patch('mini_trainer.sampler.dist.get_rank', return_value=1)
@@ -477,7 +479,7 @@ class TestGetDataLoader:
         # asserts that loading the model works properly
         assert loader is not None
         assert loader.batch_size == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # get an iterator and fetch one batch
         loader_it = iter(loader)
@@ -504,7 +506,7 @@ class TestGetDataLoader:
         # asserts that loading the model works properly
         assert loader is not None
         assert loader.batch_size == expected_batch_size
-        assert loader.sampler.completed_epochs == 0
+        assert loader.sampler.epoch == 0
 
         # get an iterator and fetch one batch
         loader_it = iter(loader)
@@ -593,6 +595,124 @@ class TestResetMinibatches:
         assert ids[0] == []
         assert loads[0] == 0
 
+class TestEpochTracking:
+    """Test suite for epoch tracking in data loading."""
+    
+    def test_epoch_sampler_epoch_increment(self):
+        """Test that EpochSampler correctly handles epochs."""
+        sampler = EpochSampler(len_data=10, seed=42)
+        
+        # First epoch
+        sampler.set_epoch(0)
+        first_epoch_indices = list(sampler)
+        
+        # Second epoch
+        sampler.set_epoch(1)
+        second_epoch_indices = list(sampler)
+        
+        # Each epoch should have all indices 0-9, but in different orders
+        assert set(first_epoch_indices) == set(range(10))
+        assert set(second_epoch_indices) == set(range(10))
+        
+        # The order should be different between epochs (with very high probability)
+        assert first_epoch_indices != second_epoch_indices
+    
+    
+    def test_distributed_epoch_synchronization(self):
+        """Test that different ranks see the same shuffled order per epoch."""
+        data_len = 10
+        sampler1 = EpochSampler(len_data=data_len, seed=42)
+        sampler2 = EpochSampler(len_data=data_len, seed=42)  # Same seed
+        
+        for epoch in range(3):
+            sampler1.set_epoch(epoch)
+            sampler2.set_epoch(epoch)
+            iter1 = iter(sampler1)
+            iter2 = iter(sampler2)
+            for _ in range(data_len):
+                assert next(iter1) == next(iter2)
+    
+    def test_epoch_boundary_with_uneven_batch_size(self):
+        """Test that batch size affects when epoch boundaries are crossed."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create test data
+            test_file = os.path.join(temp_dir, "test.jsonl")
+            samples = []
+            for i in range(100):
+                samples.append({
+                    'input_ids': [1] * 10,
+                    'labels': [1] * 10,
+                    'len': 10
+                })
+            
+            with open(test_file, 'w') as f:
+                for sample in samples:
+                    f.write(json.dumps(sample) + '\n')
+            
+            # Create data loaders with different batch sizes
+            loader1 = get_data_loader(
+                data_path=test_file,
+                batch_size=10,  # Evenly divides dataset
+                max_tokens_per_gpu=1000,
+                seed=42,
+                rank=0,
+                world_size=1
+            )
+            
+            loader2 = get_data_loader(
+                data_path=test_file,
+                batch_size=7,  # Does not evenly divide dataset
+                max_tokens_per_gpu=1000,
+                seed=42,
+                rank=0,
+                world_size=1
+            )
+            
+            # Count samples in first "epoch" worth of batches
+            iter1 = iter(loader1)
+            iter2 = iter(loader2)
+            
+            samples_seen1 = 0
+            samples_seen2 = 0
+            
+            # Process 100 samples (1 epoch worth)
+            while samples_seen1 < 100:
+                batch = next(iter1)
+                for mb in batch:
+                    samples_seen1 += mb['num_samples']
+            
+            while samples_seen2 < 100:
+                batch = next(iter2)
+                for mb in batch:
+                    samples_seen2 += mb['num_samples']
+            
+            # Both should have seen exactly 100 samples
+            assert samples_seen1 == 100
+            # With batch_size=7, we might overshoot due to batching
+            assert samples_seen2 == 100  # This reveals the issue!
+
+    def test_data_loader_length_with_epoch_sampler(self):
+        """Test that DataLoader with EpochSampler reports correct length."""
+        dataset = MagicMock()
+        dataset.__len__ = MagicMock(return_value=100)
+        dataset.__getitem__ = MagicMock(side_effect=lambda x: {'input_ids': [1], 'labels': [1]})
+        
+        sampler = EpochSampler(len(dataset))
+        loader = DataLoader(dataset, batch_size=10, sampler=sampler)
+        
+        # The loader computes a length based on batch size
+        length = len(loader)
+        assert length == 10  # Based on dataset_size / batch_size
+        
+        # EpochSampler provides one complete epoch
+        count = 0
+        for i, batch in enumerate(loader):
+            count += 1
+        
+        assert count == length  # Should iterate exactly one epoch
+    
+    
+    
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

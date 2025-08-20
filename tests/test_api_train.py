@@ -14,7 +14,6 @@ from mini_trainer.api_train import (
 from mini_trainer.training_types import (
     TorchrunArgs,
     TrainingArgs,
-    LogLevelEnum,
     TrainingMode
 )
 
@@ -24,12 +23,17 @@ class TestDataclasses:
     
     def test_torchrun_args_defaults(self):
         """Test TorchrunArgs default values."""
-        args = TorchrunArgs()
+        args = TorchrunArgs()  # Use all defaults
         assert args.nnodes == 1
-        assert args.nproc_per_node == 8
+        assert args.nproc_per_node == 1
         assert args.node_rank == 0
-        assert args.rdzv_id == 420
-        assert args.rdzv_endpoint == "0.0.0.0:12345"
+        assert args.rdzv_id == 123
+        assert args.rdzv_endpoint == "127.0.0.1"
+        
+        # Test with custom nproc_per_node only
+        args = TorchrunArgs(nproc_per_node=8)
+        assert args.nnodes == 1  # Should still use default
+        assert args.nproc_per_node == 8
     
     def test_torchrun_args_custom(self):
         """Test TorchrunArgs with custom values."""
@@ -48,13 +52,20 @@ class TestDataclasses:
     
     def test_training_args_defaults(self):
         """Test TrainingArgs default values."""
-        args = TrainingArgs()
+        args = TrainingArgs(
+            model_name_or_path="Qwen/Qwen2.5-1.5B-Instruct",
+            data_path="test.jsonl",
+            batch_size=1024,
+            max_tokens_per_gpu=10000,
+            learning_rate=5e-6,
+            output_dir="./output"
+        )
         assert args.model_name_or_path == "Qwen/Qwen2.5-1.5B-Instruct"
         assert args.data_path == "test.jsonl"
         assert args.batch_size == 1024
         assert args.max_tokens_per_gpu == 10000
         assert args.learning_rate == 5e-6
-        assert args.num_warmup_steps == 10
+        assert args.num_warmup_steps == 0
         assert args.lr_scheduler == "constant_with_warmup"
         assert args.seed == 42
         assert args.use_liger_kernels is False
@@ -62,14 +73,13 @@ class TestDataclasses:
         assert args.osft_upcast_dtype == "float32"
         assert args.osft_output_dtype is None
         assert args.output_dir == "./output"
-        assert args.logging_level == LogLevelEnum.INFO
         assert args.min_samples_per_checkpoint is None
         assert args.training_mode == TrainingMode.EPOCH
         assert args.max_epochs == 1
         assert args.max_steps == 0
         assert args.max_tokens == 0
         assert args.checkpoint_at_epoch is False
-        assert args.save_final_checkpoint is False
+        assert args.save_final_checkpoint is True
     
     def test_training_args_custom(self):
         """Test TrainingArgs with custom values."""
@@ -77,16 +87,18 @@ class TestDataclasses:
             model_name_or_path="gpt2",
             data_path="/path/to/data.jsonl",
             batch_size=512,
+            max_tokens_per_gpu=5000,
             learning_rate=1e-4,
-            use_liger_kernels=True,
-            logging_level=LogLevelEnum.DEBUG
+            output_dir="/custom/output",
+            use_liger_kernels=True
         )
         assert args.model_name_or_path == "gpt2"
         assert args.data_path == "/path/to/data.jsonl"
         assert args.batch_size == 512
+        assert args.max_tokens_per_gpu == 5000
         assert args.learning_rate == 1e-4
+        assert args.output_dir == "/custom/output"
         assert args.use_liger_kernels is True
-        assert args.logging_level == LogLevelEnum.DEBUG
 
 
 class TestStreamablePopen:
@@ -426,12 +438,15 @@ class TestRunTraining:
         mock_popen_class.return_value = mock_popen
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            base_torch_args = TorchrunArgs()
+            base_torch_args = TorchrunArgs(nproc_per_node=8)
             
             # Scenario 1: osft is not provided, this should succeed
             train_args_no_osft = TrainingArgs(
                 model_name_or_path="my-model",
                 data_path="/data/train.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=False  # Default case
             )
@@ -451,6 +466,9 @@ class TestRunTraining:
             train_args_osft_no_ratio = TrainingArgs(
                 model_name_or_path="my-model",
                 data_path="/data/train.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=None  # Missing required parameter
@@ -466,6 +484,9 @@ class TestRunTraining:
             train_args_osft_with_ratio = TrainingArgs(
                 model_name_or_path="my-model",
                 data_path="/data/train.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.3
@@ -488,8 +509,15 @@ class TestRunTraining:
         mock_popen_class.return_value = mock_popen
         
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
-            train_args = TrainingArgs(output_dir=tmpdir)
+            torch_args = TorchrunArgs(nproc_per_node=8)
+            train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
+                output_dir=tmpdir
+            )
             
             with pytest.raises(KeyboardInterrupt):
                 run_training(torch_args, train_args)
@@ -506,8 +534,15 @@ class TestRunTraining:
         mock_popen_class.return_value = mock_popen
         
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
-            train_args = TrainingArgs(output_dir=tmpdir)
+            torch_args = TorchrunArgs(nproc_per_node=8)
+            train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
+                output_dir=tmpdir
+            )
             
             with pytest.raises(RuntimeError) as exc_info:
                 run_training(torch_args, train_args)
@@ -518,19 +553,6 @@ class TestRunTraining:
 
 class TestEnums:
     """Test the enum types."""
-    
-    def test_log_level_values(self):
-        """Test that LogLevelEnum has correct values."""
-        assert LogLevelEnum.DEBUG.value == "DEBUG"
-        assert LogLevelEnum.INFO.value == "INFO"
-        assert LogLevelEnum.WARNING.value == "WARNING"
-        assert LogLevelEnum.ERROR.value == "ERROR"
-        assert LogLevelEnum.CRITICAL.value == "CRITICAL"
-    
-    def test_log_level_string_comparison(self):
-        """Test that LogLevelEnum can be compared with strings."""
-        assert LogLevelEnum.INFO == "INFO"
-        assert LogLevelEnum.DEBUG == "DEBUG"
     
     def test_training_mode_values(self):
         """Test that TrainingMode enum has correct values."""
@@ -570,8 +592,13 @@ for i, arg in enumerate(sys.argv):
                 # Make the train script path point to our mock script
                 mock_path.return_value.__truediv__.return_value = mock_script
                 
-                torch_args = TorchrunArgs(nproc_per_node=1)
+                torch_args = TorchrunArgs()  # Both are defaults now
                 train_args = TrainingArgs(
+                    model_name_or_path="test-model",
+                    data_path="test.jsonl",
+                    batch_size=32,
+                    max_tokens_per_gpu=1000,
+                    learning_rate=1e-5,
                     output_dir=tmpdir,
                     lr_scheduler_kwargs=None  # Should default to empty dict
                 )
@@ -657,8 +684,13 @@ sys.exit(1)
     def test_command_construction_with_special_chars(self):
         """Test that special characters in kwargs are properly escaped."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 lr_scheduler_kwargs={
                     "description": "A string with spaces and special chars: @#$%",
@@ -703,8 +735,13 @@ sys.exit(1)
     def test_all_boolean_flags_passed(self):
         """Test that all boolean flags are correctly passed when True."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 use_liger_kernels=True,
                 checkpoint_at_epoch=True,
@@ -733,8 +770,13 @@ sys.exit(1)
     def test_boolean_flags_not_passed_when_false(self):
         """Test that boolean flags are not passed when False."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 use_liger_kernels=False,
                 osft=False,
@@ -762,8 +804,13 @@ sys.exit(1)
         """Test that TrainingMode enum values are correctly converted to strings."""
         with tempfile.TemporaryDirectory() as tmpdir:
             for mode in [TrainingMode.EPOCH, TrainingMode.STEP, TrainingMode.TOKEN, TrainingMode.INFINITE]:
-                torch_args = TorchrunArgs()
+                torch_args = TorchrunArgs(nproc_per_node=8)
                 train_args = TrainingArgs(
+                    model_name_or_path="test-model",
+                    data_path="test.jsonl",
+                    batch_size=32,
+                    max_tokens_per_gpu=1000,
+                    learning_rate=1e-5,
                     output_dir=tmpdir,
                     training_mode=mode
                 )
@@ -787,49 +834,32 @@ sys.exit(1)
                     
                     assert mode_arg == f"--training-mode={mode.value}"
     
-    def test_logging_level_enum_passed_correctly(self):
-        """Test that LogLevelEnum values are correctly converted to strings."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            for level in [LogLevelEnum.DEBUG, LogLevelEnum.INFO, LogLevelEnum.WARNING, 
-                         LogLevelEnum.ERROR, LogLevelEnum.CRITICAL]:
-                torch_args = TorchrunArgs()
-                train_args = TrainingArgs(
-                    output_dir=tmpdir,
-                    logging_level=level
-                )
-                
-                with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
-                    mock_popen = MagicMock()
-                    mock_popen.poll.return_value = 0
-                    mock_popen_class.return_value = mock_popen
-                    
-                    run_training(torch_args, train_args)
-                    
-                    call_args = mock_popen_class.call_args
-                    _, command = call_args[0]
-                    
-                    # Find the logging-level argument
-                    level_arg = None
-                    for arg in command:
-                        if arg.startswith("--logging-level="):
-                            level_arg = arg
-                            break
-                    
-                    assert level_arg == f"--logging-level={level.value}"
-
 
 class TestOSFTDtypeParameters:
     """Test the new OSFT dtype parameters."""
     
     def test_osft_dtype_defaults(self):
         """Test that OSFT dtype parameters have correct defaults."""
-        args = TrainingArgs()
+        args = TrainingArgs(
+            model_name_or_path="test-model",
+            data_path="test.jsonl",
+            batch_size=32,
+            max_tokens_per_gpu=1000,
+            learning_rate=1e-5,
+            output_dir="/tmp/test"
+        )
         assert args.osft_upcast_dtype == "float32"
         assert args.osft_output_dtype is None
     
     def test_osft_dtype_custom_values(self):
         """Test that OSFT dtype parameters accept custom values."""
         args = TrainingArgs(
+            model_name_or_path="test-model",
+            data_path="test.jsonl",
+            batch_size=32,
+            max_tokens_per_gpu=1000,
+            learning_rate=1e-5,
+            output_dir="/tmp/test",
             osft_upcast_dtype="bfloat16",
             osft_output_dtype="float16"
         )
@@ -839,6 +869,12 @@ class TestOSFTDtypeParameters:
     def test_osft_dtype_none_values(self):
         """Test that OSFT dtype parameters accept None values."""
         args = TrainingArgs(
+            model_name_or_path="test-model",
+            data_path="test.jsonl",
+            batch_size=32,
+            max_tokens_per_gpu=1000,
+            learning_rate=1e-5,
+            output_dir="/tmp/test",
             osft_upcast_dtype=None,
             osft_output_dtype=None
         )
@@ -853,8 +889,13 @@ class TestOSFTDtypeParameters:
         mock_popen_class.return_value = mock_popen
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.5,
@@ -879,8 +920,13 @@ class TestOSFTDtypeParameters:
         mock_popen_class.return_value = mock_popen
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.5,
@@ -904,8 +950,13 @@ class TestOSFTDtypeParameters:
         mock_popen_class.return_value = mock_popen
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
                 osft_rank_ratio=0.5,
@@ -930,8 +981,13 @@ class TestOSFTDtypeParameters:
         mock_popen_class.return_value = mock_popen
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=False,  # OSFT disabled
                 osft_upcast_dtype="bfloat16",
@@ -954,6 +1010,12 @@ class TestOSFTDtypeParameters:
         
         for dtype in supported_dtypes:
             args = TrainingArgs(
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
+                batch_size=32,
+                max_tokens_per_gpu=1000,
+                learning_rate=1e-5,
+                output_dir="/tmp/test",
                 osft_upcast_dtype=dtype,
                 osft_output_dtype=dtype
             )
@@ -963,12 +1025,14 @@ class TestOSFTDtypeParameters:
     def test_numeric_parameters_precision(self):
         """Test that numeric parameters maintain precision when passed."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            torch_args = TorchrunArgs()
+            torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
-                output_dir=tmpdir,
-                learning_rate=1.23456789e-7,  # Very small float
+                model_name_or_path="test-model",
+                data_path="test.jsonl",
                 batch_size=2048,
                 max_tokens_per_gpu=50000,
+                learning_rate=1.23456789e-7,  # Very small float
+                output_dir=tmpdir,
                 num_warmup_steps=1000,
                 min_samples_per_checkpoint=10000,
                 max_epochs=100,
@@ -1039,7 +1103,6 @@ validation_results.append(("model", args.model_name_or_path == "test-model-path"
 validation_results.append(("data", args.data_path == "/path/to/data.jsonl"))
 validation_results.append(("scheduler", args.lr_scheduler == "cosine_annealing"))
 validation_results.append(("output", args.output_dir.endswith("test_output")))
-validation_results.append(("logging", args.logging_level == "DEBUG"))
 validation_results.append(("mode", args.training_mode == "epoch"))
 
 # Check numeric parameters

@@ -17,7 +17,7 @@ import pytest
 
 from mini_trainer.train import train, main, validate_training_mode
 from mini_trainer.batch_metrics import BatchMetrics
-from mini_trainer.training_types import TrainingMode, LogLevelEnum
+from mini_trainer.training_types import TrainingMode
 
 
 class TestValidateTrainingMode:
@@ -343,7 +343,6 @@ class TestMainCLI:
                 use_liger_kernels=False,
                 osft=False,
                 output_dir=temp_dir,
-                logging_level=LogLevelEnum.INFO,
                 min_samples_per_checkpoint=1000
             )
         
@@ -393,7 +392,6 @@ class TestMainCLI:
                 osft=True,
                 osft_rank_ratio=0.5,
                 output_dir=temp_dir,
-                logging_level=LogLevelEnum.DEBUG,
                 min_samples_per_checkpoint=500
             )
         
@@ -438,7 +436,6 @@ class TestMainCLI:
                                         use_liger_kernels=False,
                                         osft=False,
                                         output_dir=temp_dir,
-                                        logging_level=LogLevelEnum.INFO,
                                         min_samples_per_checkpoint=1000
                                     )
                                 

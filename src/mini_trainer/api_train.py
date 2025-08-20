@@ -73,7 +73,7 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
     """
     # Set up logging
     logging.basicConfig(
-        level=getattr(logging, train_args.logging_level.value),
+        level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
@@ -104,7 +104,6 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
         f"--lr-scheduler-kwargs={json.dumps(train_args.lr_scheduler_kwargs) if train_args.lr_scheduler_kwargs else '{}'}",
         f"--seed={train_args.seed}",
         f"--output-dir={train_args.output_dir}",
-        f"--logging-level={train_args.logging_level.value}",
         f"--training-mode={train_args.training_mode.value}",
         f"--max-epochs={train_args.max_epochs}",
         f"--max-steps={train_args.max_steps}",

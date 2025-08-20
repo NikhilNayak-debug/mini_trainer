@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from mini_trainer.train import parse_dtype
-from mini_trainer.training_types import TrainingMode, LogLevelEnum
 
 
 class TestDtypeConversion:

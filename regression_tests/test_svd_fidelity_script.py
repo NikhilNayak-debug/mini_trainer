@@ -42,7 +42,14 @@ def load_original_model(model_name_or_path, use_liger_kernels=False):
 
 
 def load_svd_model(model_name_or_path, use_liger_kernels=False):
-    """Load the model with distributed SVD initialization."""
+    """Load the model with distributed SVD initialization.
+    
+    Note: We use float64 for upcast_dtype and output_dtype to ensure accurate
+    orthogonality and rank checks. With float32 and especially bfloat16, 
+    numerical precision issues make it very difficult to verify orthogonality.
+    As matrix size increases, even float64 may not be sufficient for perfect
+    orthogonality validation.
+    """
     rank = int(os.environ.get("RANK", 0))
 
     log_rank_0("Loading SVD model (with distributed SVD)...")
@@ -51,8 +58,8 @@ def load_svd_model(model_name_or_path, use_liger_kernels=False):
         use_liger_kernels=use_liger_kernels,
         osft=True,  # Enable SVD
         rank=rank,
-        upcast_dtype=torch.float64,
-        output_dtype=torch.float64,
+        upcast_dtype=torch.float64,  # Use float64 for better numerical stability
+        output_dtype=torch.float64,  # Maintain precision in output
     )
     return svd_model
 

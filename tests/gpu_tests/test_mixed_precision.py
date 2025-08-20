@@ -123,10 +123,7 @@ class TestMixedPrecisionDtypes:
             loss = output.loss
             
             # Handle potentially unreduced loss
-            if loss.numel() > 1:
-                loss = loss.float().sum()
-            else:
-                loss = loss.float()
+            loss = loss.float().sum() / batch_size
             
             # Backward pass
             loss.backward()

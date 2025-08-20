@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
@@ -18,9 +19,9 @@ import pytest
 from transformers import get_scheduler
 
 from mini_trainer.training_types import TrainingMode
-from mini_trainer.scheduler_utils import calculate_num_training_steps, get_dataset_metrics
 from mini_trainer.setup_model_for_training import setup_training_components
 from mini_trainer.sampler import get_data_loader
+from mini_trainer.train import calculate_num_training_steps
 
 
 class TestCalculateTrainingSteps:
@@ -244,30 +245,6 @@ class TestDatasetMetrics:
                 return f.name
         return _create
     
-    @patch('torch.distributed.is_initialized', return_value=False)
-    @patch('torch.distributed.get_rank', return_value=0)
-    @patch('torch.distributed.get_world_size', return_value=1)
-    def test_get_dataset_metrics(self, mock_world_size, mock_rank, mock_is_init, create_test_data):
-        """Test getting comprehensive dataset metrics."""
-        data_path = create_test_data()
-        
-        try:
-            data_loader = get_data_loader(
-                data_path=data_path,
-                batch_size=1,
-                max_tokens_per_gpu=1000,
-                seed=42
-            )
-            
-            metrics = get_dataset_metrics(data_loader)
-            
-            assert metrics['num_batches'] > 0
-            assert metrics['total_samples'] == 2
-            assert metrics['total_loss_tokens'] == 8  # 3 + 5
-            assert metrics['avg_tokens_per_batch'] > 0
-            
-        finally:
-            os.unlink(data_path)
 
 
 if __name__ == "__main__":

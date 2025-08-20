@@ -2,6 +2,8 @@
 """Helper script to install flash-attn with proper dependency order.
 
 This ensures torch and ninja are installed before attempting to build flash-attn.
+Comes with an optional `--strict` flag that lets GPU-oriented tests enforce its presence,
+while allowing those tests to be skippable on non-GPU tests that need to run the broader suite (e.g. CI).
 """
 import argparse
 import subprocess

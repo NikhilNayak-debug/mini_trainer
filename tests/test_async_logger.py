@@ -91,6 +91,8 @@ class TestAsyncStructuredLogger:
                     'step': i,
                     'loss': 2.0 + i * 0.1
                 })
+                # short pause to allow for coroutine to complete (it is not fully synchronous)
+                time.sleep(0.1)
             
             # Give async operations time to complete
             time.sleep(0.3)

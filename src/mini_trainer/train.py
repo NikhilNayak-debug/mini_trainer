@@ -14,8 +14,7 @@ from mini_trainer.batch_metrics import BatchMetrics
 from mini_trainer.sampler import get_data_loader
 from mini_trainer.setup_model_for_training import setup_model, setup_training_components
 from mini_trainer.utils import init_distributed_environment, log_rank_0, setup_logger
-from mini_trainer.training_types import TrainingMode, LogLevelEnum
-from mini_trainer.scheduler_utils import calculate_num_training_steps
+from mini_trainer.training_types import TrainingMode
 
 app = Typer(
     pretty_exceptions_show_locals=False,  # Hide local variables in tracebacks
@@ -359,6 +358,55 @@ def train(
         save_model(model, total_samples_accumulated, output_dir, model_name_or_path)
 
 
+def calculate_num_training_steps(
+    training_mode: TrainingMode,
+    data_loader,
+    max_epochs: int = 0,
+    max_steps: int = 0,
+    max_tokens: int = 0,
+) -> int | None:
+    """
+    Calculate the number of training steps based on the training mode.
+
+    Args:
+        training_mode: The training mode (EPOCH, STEP, TOKEN, or INFINITE)
+        data_loader: The data loader to get dataset statistics from
+        max_epochs: Maximum epochs for EPOCH mode
+        max_steps: Maximum steps for STEP mode
+        max_tokens: Maximum tokens for TOKEN mode
+
+    Returns:
+        Number of training steps, or None for INFINITE mode or when it can't be calculated
+    """
+
+    if training_mode == TrainingMode.INFINITE:
+        log_rank_0("INFINITE training mode: num_training_steps is None")
+        return None
+
+    # The most straightforward case
+    elif training_mode == TrainingMode.STEP:
+        log_rank_0(f"STEP training mode: num_training_steps = {max_steps}")
+        return max_steps
+
+    elif training_mode == TrainingMode.EPOCH:
+        # Count the number of batches in one epoch
+        num_training_steps = len(data_loader) * max_epochs
+        log_rank_0(f"EPOCH training mode: {len(data_loader)} batches/epoch * {max_epochs} epochs = {num_training_steps} steps")
+        return num_training_steps
+
+    elif training_mode == TrainingMode.TOKEN:
+        # Calculate average tokens per batch
+        log_rank_0("Calculating average tokens per batch...")
+        total_loss_tokens = sum(mb[0]['batch_num_loss_counted_tokens'] for mb in data_loader)
+        avg_tokens_per_batch = total_loss_tokens / len(data_loader)
+        num_training_steps = int(max_tokens / avg_tokens_per_batch)  # approximate value
+        log_rank_0(f"TOKEN training mode: {max_tokens} tokens / {avg_tokens_per_batch:.1f} avg tokens/batch = {num_training_steps} steps")
+        return num_training_steps
+
+
+    else:
+        raise ValueError(f"Unknown training mode: {training_mode}")
+
 
 
 @app.command()
@@ -389,7 +437,6 @@ def main(
 
 
     output_dir: Annotated[str, Option(help="Directory to save checkpoints and logs (required)")] = ...,
-    logging_level: Annotated[LogLevelEnum, Option(help="Logging level", case_sensitive=False)] = LogLevelEnum.INFO,
     min_samples_per_checkpoint: Annotated[int | None, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = None,
 
     # Training mode parameters
@@ -439,7 +486,6 @@ def main(
             "osft_upcast_dtype": osft_upcast_dtype,
             "osft_output_dtype": osft_output_dtype,
             "output_dir": output_dir,
-            "logging_level": logging_level.value,
             "min_samples_per_checkpoint": min_samples_per_checkpoint,
             "training_mode": training_mode.value,
             "max_epochs": max_epochs,
@@ -457,7 +503,7 @@ def main(
         print(f"Training with parameters: {json.dumps(params, separators=(',', ':'), indent=4)}")
         print(f"Training parameters saved to {params_path}")
 
-    setup_logger(level=logging_level.value)
+    setup_logger(level="INFO")
 
     # Parse scheduler kwargs from JSON string
     import json as json_module

@@ -97,8 +97,7 @@ if you want to pretrain on some samples, such samples should have a messages for
 all training parameters can be found in [train.py](./train.py). Make sure to use the tokenized data created above as the input here.
 
 ```shell
-torchrun --nnodes=1 --nproc-per-node=7 train.py \
-        --osft \
+torchrun --nnodes=1 --nproc-per-node=8 train.py \
         --output-dir /new_data/aldo/balrog_test \
         --data-path ./tokenized_data.jsonl \
         --model-name-or-path Qwen/Qwen2.5-1.5B-instruct \
@@ -113,8 +112,32 @@ torchrun --nnodes=1 --nproc-per-node=7 train.py \
 
 The parameters used for the run will be saved in `<output_dir>/training_params.json` and the metrics will be saved to `<output_dir>/training_metrics_0.jsonl`.
 
-NOTE: keep an eye on `nvidia-smi` while training and raise the `max-tokens-per-gpu` until you're close (but not quite to avoid cuda memory re allocations) to the max memory in your GPUs.
+NOTE: keep an eye on `nvidia-smi` or `nvtop` while training and raise the `max-tokens-per-gpu` until you're close (but not quite to avoid cuda memory re allocations) to the max memory in your GPUs.
 
+## Continual Learning / OSFT
+
+mini_trainer also supports a novel technique for continual learning known as **Orthogonal Subspace Fine-Tuning**, or OSFT for short.
+
+This method allows you to target the pieces of your language model which are least likely to contain valuable task-specific information. 
+
+To run this method with `mini_trainer`, simply pass the `--osft` flag to enable the technique, and pass the `--osft-rank-ratio` parameter to specify how much of the model's most important pieces you would like to remain frozen:
+
+```bash
+torchrun --nnodes=1 --nproc-per-node=8 train.py \
+        --output-dir /new_data/aldo/balrog_test \
+        --data-path ./tokenized_data.jsonl \
+        --model-name-or-path Qwen/Qwen2.5-1.5B-instruct \
+        --min-samples-per-checkpoint 2000 \
+        --num-warmup-steps 20 \
+        --max-tokens-per-gpu 128000 \
+        --batch-size 128 \
+        --use-liger-kernels \
+        --seed 893 \
+        --learning-rate 6e-6 \
+        --osft \
+        --osft-rank-ratio 0.25  # preserves the best 25% of original model
+
+```
 
 ### Multinode Training
 
