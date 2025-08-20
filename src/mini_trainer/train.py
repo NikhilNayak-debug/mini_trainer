@@ -146,10 +146,10 @@ def parse_dtype(dtype_input: str | None) -> torch.dtype | None:
 
 
 def validate_training_mode(
-    training_mode: TrainingMode = TrainingMode.INFINITE,
-    max_epochs: int = 0,
-    max_steps: int = 0,
-    max_tokens: int = 0,
+    training_mode: TrainingMode,
+    max_epochs: int,
+    max_steps: int,
+    max_tokens: int,
 ) -> TrainingMode:
     """
     Validates that the given training mode is valid, and ensures that
@@ -183,8 +183,8 @@ def train(
         output_dir: str, 
         min_samples_per_checkpoint: int | None, 
         model_name_or_path: str,
-        training_mode: TrainingMode = TrainingMode.INFINITE,
-        max_epochs: int = 0,
+        training_mode: TrainingMode = TrainingMode.EPOCH,
+        max_epochs: int = 1,
         max_steps: int = 0,
         max_tokens: int = 0,
         checkpoint_at_epoch: bool = False,
@@ -263,21 +263,7 @@ def train(
             batch_totals.reset_batch()
             torch.cuda.reset_peak_memory_stats()
             for grad_accum, mb in enumerate(batch):
-
                 mb_start_time = time.time()
-                
-                # here is everything in the minibatch
-
-                # return {
-                #     "input_ids": torch.tensor([input_ids], dtype=torch.long),
-                #     "labels": torch.tensor([labels], dtype=torch.long),
-                #     "position_ids": torch.tensor([position_ids], dtype=torch.long),
-                #     "num_loss_counted_tokens": num_loss_counted_tokens,
-                #     "num_samples": num_samples,
-                #     "batch_num_loss_counted_tokens": batch_num_loss_counted_tokens,
-                # }
-
-
                 mb_num_loss_counted_tokens = mb['num_loss_counted_tokens']
                 mb_num_samples = mb['num_samples']
                 batch_num_loss_counted_tokens = mb['batch_num_loss_counted_tokens']
@@ -407,8 +393,8 @@ def main(
     min_samples_per_checkpoint: Annotated[int | None, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = None,
 
     # Training mode parameters
-    training_mode: Annotated[TrainingMode, Option(help="Training mode: epoch, step, token, or infinite", case_sensitive=False)] = TrainingMode.INFINITE,  # todo: change this
-    max_epochs: Annotated[int, Option(help="Maximum number of epochs (for epoch mode)")] = 0,
+    training_mode: Annotated[TrainingMode, Option(help="Training mode: epoch, step, token, or infinite", case_sensitive=False)] = TrainingMode.EPOCH,
+    max_epochs: Annotated[int, Option(help="Maximum number of epochs (for epoch mode)")] = 1,
     max_steps: Annotated[int, Option(help="Maximum number of steps (for step mode)")] = 0,
     max_tokens: Annotated[int, Option(help="Maximum number of loss-counted tokens (for token mode)")] = 0,
     checkpoint_at_epoch: Annotated[bool, Option(help="Whether to save checkpoints at the end of each epoch")] = False,

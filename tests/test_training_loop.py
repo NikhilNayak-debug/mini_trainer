@@ -26,34 +26,33 @@ class TestValidateTrainingMode:
     def test_epoch_mode_validation(self):
         """Test EPOCH mode validation."""
         # Should pass with valid max_epochs
-        validate_training_mode(TrainingMode.EPOCH, max_epochs=5)
+        validate_training_mode(TrainingMode.EPOCH, max_epochs=5, max_steps=0, max_tokens=0)
         
         # Should fail without max_epochs
         with pytest.raises(ValueError, match="EPOCH training mode requires max_epochs > 0"):
-            validate_training_mode(TrainingMode.EPOCH, max_epochs=0)
+            validate_training_mode(TrainingMode.EPOCH, max_epochs=0, max_steps=0, max_tokens=0)
     
     def test_step_mode_validation(self):
         """Test STEP mode validation."""
         # Should pass with valid max_steps
-        validate_training_mode(TrainingMode.STEP, max_steps=100)
+        validate_training_mode(TrainingMode.STEP, max_epochs=0, max_steps=100, max_tokens=0)
         
         # Should fail without max_steps
         with pytest.raises(ValueError, match="STEP training mode requires max_steps > 0"):
-            validate_training_mode(TrainingMode.STEP, max_steps=0)
+            validate_training_mode(TrainingMode.STEP, max_epochs=0, max_steps=0, max_tokens=0)
     
     def test_token_mode_validation(self):
         """Test TOKEN mode validation."""
         # Should pass with valid max_tokens
-        validate_training_mode(TrainingMode.TOKEN, max_tokens=1000)
+        validate_training_mode(TrainingMode.TOKEN, max_epochs=0, max_steps=0, max_tokens=1000)
         
         # Should fail without max_tokens
         with pytest.raises(ValueError, match="TOKEN training mode requires max_tokens > 0"):
-            validate_training_mode(TrainingMode.TOKEN, max_tokens=0)
+            validate_training_mode(TrainingMode.TOKEN, max_epochs=0, max_steps=0, max_tokens=0)
     
     def test_infinite_mode_validation(self):
         """Test INFINITE mode validation."""
-        # Should pass with or without parameters
-        validate_training_mode(TrainingMode.INFINITE)
+        # Should pass with any parameter values since INFINITE mode doesn't check them
         validate_training_mode(TrainingMode.INFINITE, max_epochs=0, max_steps=0, max_tokens=0)
         validate_training_mode(TrainingMode.INFINITE, max_epochs=5, max_steps=100, max_tokens=1000)
 

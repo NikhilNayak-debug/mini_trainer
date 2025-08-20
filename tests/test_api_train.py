@@ -64,8 +64,8 @@ class TestDataclasses:
         assert args.output_dir == "./output"
         assert args.logging_level == LogLevelEnum.INFO
         assert args.min_samples_per_checkpoint is None
-        assert args.training_mode == TrainingMode.INFINITE
-        assert args.max_epochs == 0
+        assert args.training_mode == TrainingMode.EPOCH
+        assert args.max_epochs == 1
         assert args.max_steps == 0
         assert args.max_tokens == 0
         assert args.checkpoint_at_epoch is False

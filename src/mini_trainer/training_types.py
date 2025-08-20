@@ -67,8 +67,8 @@ class TrainingArgs:
     min_samples_per_checkpoint: Optional[int] = None
     
     # Training mode and stopping criteria
-    training_mode: TrainingMode = TrainingMode.INFINITE
-    max_epochs: int = 0  # For EPOCH mode
+    training_mode: TrainingMode = TrainingMode.EPOCH
+    max_epochs: int = 1  # For EPOCH mode
     max_steps: int = 0   # For STEP mode  
     max_tokens: int = 0  # For TOKEN mode
     
