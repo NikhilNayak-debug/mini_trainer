@@ -425,10 +425,10 @@ def main(
     use_liger_kernels: Annotated[bool, Option(help="Whether to use Liger kernels")] = False,
 
     # todo: currently 0.75 rank ratio means unfreezing 25% of the singular values. We want to change this into a variable for which 0 indicates no fine-tuning, and 100% means full fine-tuning
-    osft: Annotated[bool, Option(help="Enable SVD based orthogonal subspace training")] = False,
-    osft_rank_ratio: Annotated[float, Option(help="Ratio of ranks to use for SVD. Required when osft is True")] = None,  
+    osft: Annotated[bool, Option(help="Enable OSFT (Orthogonal Subspace Fine-Tuning)")] = False,
+    osft_rank_ratio: Annotated[float, Option(help="Ratio of ranks to use for OSFT. Required when osft is True")] = None,  
     osft_target_patterns: Annotated[str, Option(
-        help=("List of target modules to use for SVD. When not provided, it will try to guess the patterns based on the model. "
+        help=("List of target modules to use for OSFT. When not provided, it will try to guess the patterns based on the model. "
               "This should be a comma-separated list of patterns. "
               "For example, 'self_attn.q_proj,self_attn.k_proj,mlp.gate_proj'")
     )] = None,
@@ -533,7 +533,7 @@ def main(
     
     log_rank_0(f"Calculated num_training_steps: {num_training_steps}")
     
-    # If Orthogonal Subspace Learning is enabled, loads a model with decomposed trainable low-rank + fixed high-rank subspace weights (see svd_utils)
+    # If Orthogonal Subspace Learning is enabled, loads a model with decomposed trainable low-rank + fixed high-rank subspace weights (see osft_utils)
     model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,

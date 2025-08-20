@@ -146,7 +146,7 @@ class TestModelInitialization:
                 assert mock_shard.called
     
     @patch('mini_trainer.setup_model_for_training.log_rank_0')
-    @patch('mini_trainer.svd_utils.optim_wrapper')
+    @patch('mini_trainer.osft_utils.optim_wrapper')
     @patch('transformers.get_scheduler')
     @patch('mini_trainer.setup_model_for_training.wrap_fsdp2')
     def test_training_components_setup_with_tiny_model(self, mock_wrap, mock_sched_fn, mock_opt_wrap, mock_log):
@@ -175,15 +175,15 @@ class TestModelInitialization:
         assert scheduler is not None
 
 
-class TestSVDModelInitialization:
-    """Test SVD/orthogonal subspace learning with tiny models."""
+class TestOSFTModelInitialization:
+    """Test OSFT/orthogonal subspace learning with tiny models."""
     
-    @pytest.mark.skipif(True, reason="SVD initialization requires significant setup")
-    def test_svd_model_creation(self):
-        """Test creating an SVD model from a tiny base model."""
-        # This would require implementing SVD for tiny models
+    @pytest.mark.skipif(True, reason="OSFT initialization requires significant setup")
+    def test_osft_model_creation(self):
+        """Test creating an OSFT model from a tiny base model."""
+        # This would require implementing OSFT for tiny models
         # Skipping for now as it's complex and optional
-        pytest.skip("SVD model tests require full SVD implementation")
+        pytest.skip("OSFT model tests require full OSFT implementation")
 
 
 

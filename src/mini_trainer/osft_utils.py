@@ -23,34 +23,34 @@ class SVDDecompositionDict(SVDDictBase, total=False):
     rank_high: int
 
 
-def is_svd_param(name: str, param: torch.Tensor, svd_config: dict) -> bool:
+def is_osft_param(name: str, param: torch.Tensor, osft_config: dict) -> bool:
     """
-    Utility function to make it easier to classify SVD parameters.
+    Utility function to make it easier to classify OSFT parameters.
     """
-    return len(param.shape) == 2 and name in svd_config and svd_config[name] > 0
+    return len(param.shape) == 2 and name in osft_config and osft_config[name] > 0
 
 
-class SVDModelProtocol(Protocol):
+class OSFTModelProtocol(Protocol):
     """
-    Protocol defining the interface for models with SVD decomposition capabilities.
+    Protocol defining the interface for models with OSFT capabilities.
 
     This allows type hints throughout the codebase without depending on the dynamically
-    created class from create_svd_model_class().
+    created class from create_osft_model_class().
     """
 
-    svd_config: dict[str, int]
+    osft_config: dict[str, int]
     name_mapping: dict[str, str]
-    svd_params: nn.ModuleDict
+    osft_params: nn.ModuleDict
     upcast_dtype: torch.dtype
     output_dtype: torch.dtype
 
-    def reinitialize_svd(
+    def reinitialize_osft(
         self,
         decompose_existing_weights: bool,
         assigned_params: list[tuple[str, torch.Tensor]] | None = None,
     ) -> None: ...
 
-    def reinitialize_svd_distributed(self) -> None: ...
+    def reinitialize_osft_distributed(self) -> None: ...
 
     def project_gradients(self) -> None: ...
 
@@ -69,44 +69,44 @@ class SVDModelProtocol(Protocol):
     ) -> torch.Tensor: ...
 
 
-# Type alias for any model that implements SVD decomposition
-SVDModel = SVDModelProtocol
+# Type alias for any model that implements OSFT
+OSFTModel = OSFTModelProtocol
 
 
-def is_svd_model(model: torch.nn.Module) -> bool:
+def is_osft_model(model: torch.nn.Module) -> bool:
     """
-    Check if a model implements the SVD decomposition interface.
+    Check if a model implements the OSFT interface.
 
     Args:
         model: The model to check
 
     Returns:
-        True if the model has SVD capabilities, False otherwise
+        True if the model has OSFT capabilities, False otherwise
     """
     required_attrs = [
-        "svd_config",
-        "svd_params",
+        "osft_config",
+        "osft_params",
         "project_gradients",
-        "reinitialize_svd",
+        "reinitialize_osft",
     ]
     return all(hasattr(model, attr) for attr in required_attrs)
 
 
-def cast_to_svd_model(model: torch.nn.Module) -> SVDModel:
+def cast_to_osft_model(model: torch.nn.Module) -> OSFTModel:
     """
-    Cast a model to SVDModel type for type checkers.
+    Cast a model to OSFTModel type for type checkers.
 
     Args:
-        model: The model to cast (should implement SVDModelProtocol)
+        model: The model to cast (should implement OSFTModelProtocol)
 
     Returns:
-        The same model, but typed as SVDModel
+        The same model, but typed as OSFTModel
 
     Raises:
-        TypeError: If the model doesn't implement the SVD interface
+        TypeError: If the model doesn't implement the OSFT interface
     """
-    if not is_svd_model(model):
-        raise TypeError(f"Model {type(model)} does not implement SVD interface")
+    if not is_osft_model(model):
+        raise TypeError(f"Model {type(model)} does not implement OSFT interface")
     return model  # type: ignore
 
 def create_svd_dict(
@@ -277,9 +277,9 @@ def project_gradient_to_orthogonal_space(svd_dict: SVDDecompositionDict):
             dV.copy_(local_dV)
 
 
-def get_svd_target_parameters(model, svd_config):
+def get_osft_target_parameters(model, osft_config):
     """
-    Determines which parameters will be SVD decomposed based on the SVD configuration.
+    Determines which parameters will be OSFT decomposed based on the OSFT configuration.
 
     Returns a list of (name, param) tuples for parameters that will be decomposed.
     """
@@ -288,14 +288,14 @@ def get_svd_target_parameters(model, svd_config):
         # TODO(osilkin): Right now we are only training 2D parameters, but some 1D parameters (like bias vectors)
         # are vectors stored as a list, but may be interpreted as a (1, N) or (N, 1) matrix.
         # SVD can processs these in general, but maybe they should be targeted normally
-        if is_svd_param(name, param, svd_config):
+        if is_osft_param(name, param, osft_config):
             target_params.append((name, param))
     return target_params
 
 
-def partition_svd_work(target_params, world_size):
+def partition_svd_computation(target_params, world_size):
     """
-    Partitions the SVD work across all ranks.
+    Partitions the SVD computation work across all ranks.
 
     Args:
         target_params: List of (name, param) tuples to be decomposed
@@ -315,9 +315,9 @@ def partition_svd_work(target_params, world_size):
     return assignments
 
 
-def broadcast_svd_parameters(model, assignments, world_size):
+def broadcast_svd_results(model, assignments, world_size):
     """
-    Broadcasts SVD parameters from each rank to all other ranks.
+    Broadcasts SVD computation results from each rank to all other ranks.
 
     Args:
         model: The model with SVD parameters
@@ -355,15 +355,15 @@ def broadcast_svd_parameters(model, assignments, world_size):
         dist.barrier()
 
         # Broadcast trainable components (low-rank parameters)
-        if safe_name in model.svd_params:
-            svd_module = model.svd_params[safe_name]
+        if safe_name in model.osft_params:
+            svd_module = model.osft_params[safe_name]
 
             # Broadcast U_low, S_low, V_low
             dist.broadcast(svd_module.U_low, src=src_rank)
             dist.broadcast(svd_module.S_low, src=src_rank)
             dist.broadcast(svd_module.V_low, src=src_rank)
         else:
-            raise AttributeError(f"Warning: SVD module {safe_name} not found in model.svd_params")
+            raise AttributeError(f"Warning: OSFT module {safe_name} not found in model.osft_params")
 
     # wait for all processes to synchronize
     dist.barrier()
@@ -521,11 +521,11 @@ def get_model_config(model_name_or_class=None, target_patterns=None):
     return get_model_patterns(model_name_or_class)
 
 
-def auto_generate_target_svd_config(
+def auto_generate_target_osft_config(
     model, model_name_or_class=None, target_patterns=None, rank_ratio=0.5
 ) -> dict[str, int]:
     """
-    Automatically selects which weight matrices to decompose using SVD and determines their top-k values.
+    Automatically selects which weight matrices to decompose for OSFT and determines their top-k values.
 
     Args:
         model: The model to analyze
@@ -550,40 +550,40 @@ def auto_generate_target_svd_config(
     return config
 
 
-def create_svd_model_class(base_cls) -> type[SVDModel]:
+def create_osft_model_class(base_cls) -> type[OSFTModel]:
     """
     Dynamically creates a subclass of the given `base_cls` that replaces selected linear weights
-    with low-rank + high-rank SVD-decomposed versions.
+    with low-rank + high-rank SVD-decomposed versions for OSFT training.
 
     This class:
     - Initializes frozen high-rank buffers and trainable low-rank parameters.
     - Replaces the forward pass of targeted modules to use reconstructed weights.
     - Projects gradients during training to enforce orthogonality with high-rank subspaces.
 
-    This class enables constrained full fine-tuning using adaptive SVD.
+    This class enables constrained full fine-tuning using OSFT (Orthogonal Subspace Fine-Tuning).
 
     Returns:
-        A class that implements SVDModelProtocol and inherits from base_cls.
+        A class that implements OSFTModelProtocol and inherits from base_cls.
     """
 
-    class ModelWithSVD(base_cls):
-        svd_config: dict[str, int]
+    class ModelWithOSFT(base_cls):
+        osft_config: dict[str, int]
 
         def __init__(
             self,
             config,
-            svd_config: dict[str, int] | None = None,
-            initialize_svd=True,
+            osft_config: dict[str, int] | None = None,
+            initialize_osft=True,
             upcast_dtype: torch.dtype = torch.float32,
             output_dtype: torch.dtype | None = None,
             **kwargs,
         ):
             super().__init__(config, **kwargs)
-            self.svd_config = svd_config or {}  # Maps parameter names → top_k
+            self.osft_config = osft_config or {}  # Maps parameter names → top_k
             self.name_mapping = {}
-            self.svd_params = (
+            self.osft_params = (
                 nn.ModuleDict()
-            )  # Stores low-rank trainable SVD components
+            )  # Stores low-rank trainable OSFT components
 
             # We want to define how we will upcast & what precision we'll store the SVD
             # params in. Higher precision is best, but expensive during training, so
@@ -592,109 +592,109 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
             self.upcast_dtype = upcast_dtype
             self.output_dtype = output_dtype if output_dtype is not None else self.dtype
 
-            if initialize_svd:
-                self._initialize_svd_parameters(decompose_existing_weights=True)
+            if initialize_osft:
+                self._initialize_osft_parameters(decompose_existing_weights=True)
 
         @classmethod
         def from_pretrained(
             cls,
             pretrained_model_name_or_path,
             *model_args,
-            svd_config: dict[str, int] | None = None,
+            osft_config: dict[str, int] | None = None,
             model_name_or_class=None,
             target_patterns=None,
             rank_ratio=0.5,
             **kwargs
-        ) -> type[SVDModel]:
-            """Load pretrained weights and automatically initialize SVD parameters."""
-            # Do not initialize SVD during the initial construction so we load
+        ) -> type[OSFTModel]:
+            """Load pretrained weights and automatically initialize OSFT parameters."""
+            # Do not initialize OSFT during the initial construction so we load
             # the original dense weights first
-            # First load the base model normally without any SVD kwargs
-            init_cfg = svd_config if svd_config is not None else {}
+            # First load the base model normally without any OSFT kwargs
+            init_cfg = osft_config if osft_config is not None else {}
             log_rank_0("\033[33m!!!! Calling from_pretrained !!!!\033[0m")
-            initialize_svd = kwargs.pop('initialize_svd', False)
-            model = super(ModelWithSVD, cls).from_pretrained(
+            initialize_osft = kwargs.pop('initialize_osft', False)
+            model = super(ModelWithOSFT, cls).from_pretrained(
                 pretrained_model_name_or_path,
                 *model_args,
-                svd_config=init_cfg,
-                # we also have initialize_svd as an optin in __init__, so disable it here
-                initialize_svd=False,  
+                osft_config=init_cfg,
+                # we also have initialize_osft as an option in __init__, so disable it here
+                initialize_osft=False,  
                 **kwargs,
             )
 
-            log_rank_0("\033[33m!!!! loading svd config !!!!\033[0m")
-            # Auto-generate SVD config if not provided
-            if svd_config is None:
+            log_rank_0("\033[33m!!!! loading osft config !!!!\033[0m")
+            # Auto-generate OSFT config if not provided
+            if osft_config is None:
                 # Use pretrained model name if no specific model_name_or_class provided
                 if model_name_or_class is None:
                     model_name_or_class = pretrained_model_name_or_path
-                svd_config = auto_generate_target_svd_config(
+                osft_config = auto_generate_target_osft_config(
                     model, 
                     model_name_or_class=model_name_or_class,
                     target_patterns=target_patterns,
                     rank_ratio=rank_ratio
                 )
 
-            model.svd_config = svd_config
+            model.osft_config = osft_config
 
             # Decompose weights into high/low rank components
-            if initialize_svd:
-                log_rank_0("\033[33m!!!! 630 reinitalize_svd !!!!\033[0m")
-                model.reinitialize_svd(decompose_existing_weights=True)
+            if initialize_osft:
+                log_rank_0("\033[33m!!!! reinitialize_osft !!!!\033[0m")
+                model.reinitialize_osft(decompose_existing_weights=True)
             return model
 
-        def reinitialize_svd(
+        def reinitialize_osft(
             self, decompose_existing_weights: bool, assigned_params=None
         ):
             """
-            Reinitializes the decomposition (e.g., when learning a new task in continual learning).
+            Reinitializes the OSFT decomposition (e.g., when learning a new task in continual learning).
 
             Arguments:
                 decompose_existing_weights (bool):
-                    When true, the targeted weights are decomposed to create the SVD params.
+                    When true, the targeted weights are decomposed to create the OSFT params.
                     Otherwise, we simply create parameters with the expected shapes.
                 assigned_params (list, optional):
                     List of (name, param) tuples to process. If None, processes all parameters.
             """
             self.name_mapping = {}
-            self.svd_params = nn.ModuleDict()
-            self._initialize_svd_parameters(
+            self.osft_params = nn.ModuleDict()
+            self._initialize_osft_parameters(
                 decompose_existing_weights=decompose_existing_weights,
                 assigned_params=assigned_params,
             )
 
-        def reinitialize_svd_distributed(self):
+        def reinitialize_osft_distributed(self):
             """
-            Reinitializes SVD using distributed computation across all ranks.
+            Reinitializes OSFT using distributed SVD computation across all ranks.
             Each rank computes SVD for a subset of parameters and then broadcasts results.
             """
             if not torch.distributed.is_initialized():
                 # Fall back to single-process initialization
-                self.reinitialize_svd(decompose_existing_weights=True)
+                self.reinitialize_osft(decompose_existing_weights=True)
                 return
 
             world_size = torch.distributed.get_world_size()
             rank = torch.distributed.get_rank()
 
             # Step 1: Determine which parameters will be decomposed
-            target_params = get_svd_target_parameters(self, self.svd_config)
+            target_params = get_osft_target_parameters(self, self.osft_config)
 
             # Step 2: Partition work across ranks
-            assignments = partition_svd_work(target_params, world_size)
+            assignments = partition_svd_computation(target_params, world_size)
 
             # Step 3: Each rank initializes dummy parameters for all target params
             # but only computes SVD for its assigned parameters
             self.name_mapping = {}
-            self.svd_params = nn.ModuleDict()
+            self.osft_params = nn.ModuleDict()
 
             # Initialize all target parameters with dummy values first
             for name, param in target_params:
                 # if (
                 #     len(param.shape) == 2
-                #     and name in self.svd_config
-                #     and self.svd_config[name] > 0
+                #     and name in self.osft_config
+                #     and self.osft_config[name] > 0
                 # ):
-                top_k = self.svd_config[name]
+                top_k = self.osft_config[name]
                 svd_dict = create_svd_dict(
                     param.data,
                     top_k=top_k,
@@ -716,7 +716,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                 module_svd.V_low = svd_dict["V_low"]
                 module_svd.rank_high = svd_dict["rank_high"]
                 module_svd.safe_name = safe_name
-                self.svd_params[safe_name] = module_svd
+                self.osft_params[safe_name] = module_svd
 
                 # Replace forward method
                 mod, attr = self._get_module_by_name(name)
@@ -740,7 +740,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
             # Step 4: Each rank computes SVD for its assigned parameters
             assigned_params = assignments[rank]
             if assigned_params:
-                self._initialize_svd_parameters(
+                self._initialize_osft_parameters(
                     decompose_existing_weights=True, assigned_params=assigned_params
                 )
 
@@ -749,7 +749,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
             # uneven split of work when processing model layers in parallel.
             # So here we ensure that everything is synchronized before proceeding.
             check_distributed_is_synchronized() 
-            broadcast_svd_parameters(self, assignments, world_size)
+            broadcast_svd_results(self, assignments, world_size)
             torch.distributed.barrier()
 
             torch.cuda.empty_cache()
@@ -768,11 +768,11 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                     return None, None
             return mod, attr
 
-        def _initialize_svd_parameters(
+        def _initialize_osft_parameters(
             self, decompose_existing_weights: bool, assigned_params=None
         ):
             """
-            Applies SVD decomposition to targeted parameters and replaces their forward logic.
+            Applies SVD decomposition to targeted parameters for OSFT and replaces their forward logic.
 
             This is the key transformation that enables constrained full-parameter updates by:
             - Freezing high-rank components
@@ -781,7 +781,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
 
             Arguments:
                 decompose_existing_weights (bool):
-                    When true, the targeted weights are decomposed to create the SVD params.
+                    When true, the targeted weights are decomposed to create the OSFT params.
                     Otherwise, we simply create parameters with the expected shapes.
                 assigned_params (list, optional):
                     List of (name, param) tuples to process. If None, processes all parameters.
@@ -800,21 +800,21 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                     named_params = tqdm(
                         named_params,
                         total=len(named_params),
-                        desc=f"[SVD Init Rank {rank}] Decomposing params",
+                        desc=f"[OSFT Init Rank {rank}] Decomposing params",
                     )
                 else:
                     named_params = tqdm(
                         named_params,
                         total=len(named_params),
-                        desc="[SVD Init] Decomposing params",
+                        desc="[OSFT Init] Decomposing params",
                     )
 
-            log_rank_0("\033[33m!!!! Initializing SVD Params!!!!\033[0m")
+            log_rank_0("\033[33m!!!! Initializing OSFT Params!!!!\033[0m")
             for name, param in named_params:
                 # Apply SVD only to 2D matrices in the target config (e.g., q_proj, down_proj, etc.)
-                if is_svd_param(name, param, self.svd_config):
-                    top_k = self.svd_config[name]
-                    # log_rank_0(f"[SVD Init] Decomposing {name} with top_k={top_k}")
+                if is_osft_param(name, param, self.osft_config):
+                    top_k = self.osft_config[name]
+                    # log_rank_0(f"[OSFT Init] Decomposing {name} with top_k={top_k}")
                     svd_dict = create_svd_dict(
                         param.data,
                         top_k=top_k,
@@ -839,7 +839,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                     module_svd.V_low = svd_dict["V_low"]
                     module_svd.rank_high = svd_dict["rank_high"]
                     module_svd.safe_name = safe_name
-                    self.svd_params[safe_name] = module_svd
+                    self.osft_params[safe_name] = module_svd
 
                     mod, attr = self._get_module_by_name(name)
                     bias = mod.bias if hasattr(mod, "bias") else None
@@ -901,10 +901,10 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
             )
 
         def get_svd_dict(self, safe_name: str) -> SVDDecompositionDict:
-            if safe_name not in self.svd_params:
-                raise ValueError(f'{safe_name} doesnt exist in the SVD parameters')
+            if safe_name not in self.osft_params:
+                raise ValueError(f'{safe_name} doesnt exist in the OSFT parameters')
 
-            module_svd = self.svd_params[safe_name]
+            module_svd = self.osft_params[safe_name]
 
             # we infer rank_high since it's just the number of high singular values
             S_high = getattr(self, f"{safe_name}_S_high") 
@@ -928,7 +928,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
 
             This method should be called after backpropagation and before optimizer step.
             """
-            for safe_name in self.svd_params.keys():
+            for safe_name in self.osft_params.keys():
                 svd_dict = self.get_svd_dict(safe_name)
                 project_gradient_to_orthogonal_space(svd_dict)
 
@@ -940,9 +940,9 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                 U_high = state_dict.pop(f"{safe}_U_high")
                 S_high = state_dict.pop(f"{safe}_S_high")
                 V_high = state_dict.pop(f"{safe}_V_high")
-                U_low = state_dict.pop(f"svd_params.{safe}.U_low")
-                S_low = state_dict.pop(f"svd_params.{safe}.S_low")
-                V_low = state_dict.pop(f"svd_params.{safe}.V_low")
+                U_low = state_dict.pop(f"osft_params.{safe}.U_low")
+                S_low = state_dict.pop(f"osft_params.{safe}.S_low")
+                V_low = state_dict.pop(f"osft_params.{safe}.V_low")
                 W = reconstruct_weight_matrix(
                     {
                         "U_high": U_high,
@@ -958,8 +958,8 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                 state_dict[orig] = W
             return state_dict
 
-    ModelWithSVD.__name__ = f"{base_cls.__name__}WithSVD"
-    return ModelWithSVD
+    ModelWithOSFT.__name__ = f"{base_cls.__name__}WithOSFT"
+    return ModelWithOSFT
 
 
 def optim_wrapper(optimizer, model):

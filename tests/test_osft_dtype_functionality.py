@@ -1,4 +1,4 @@
-"""Tests for SVD dtype functionality and parameter propagation."""
+"""Tests for OSFT dtype functionality and parameter propagation."""
 
 import pytest
 import torch
@@ -6,16 +6,16 @@ import torch.nn as nn
 import tempfile
 from unittest.mock import patch, MagicMock
 
-from mini_trainer.svd_utils import (
+from mini_trainer.osft_utils import (
     create_svd_dict,
     reconstruct_weight_matrix,
-    create_svd_model_class,
-    auto_generate_target_svd_config
+    create_osft_model_class,
+    auto_generate_target_osft_config
 )
 from mini_trainer.setup_model_for_training import setup_model
 
 
-class TestSVDDtypeFunctions:
+class TestOSFTDtypeFunctions:
     """Test the core SVD functions handle dtypes correctly."""
     
     def test_create_svd_dict_default_dtypes(self):
@@ -149,11 +149,11 @@ class TestSVDDtypeFunctions:
         assert torch.allclose(weight, reconstructed, atol=1e-6)
 
 
-class TestSVDModelDtypeIntegration:
+class TestOSFTModelDtypeIntegration:
     """Test SVD model integration with dtype parameters."""
     
-    def test_svd_model_dtype_initialization(self):
-        """Test that SVD model properly initializes with dtype parameters."""
+    def test_osft_model_dtype_initialization(self):
+        """Test that OSFT model properly initializes with dtype parameters."""
         # Create a simple model
         class SimpleModel(nn.Module):
             def __init__(self, config):
@@ -161,17 +161,17 @@ class TestSVDModelDtypeIntegration:
                 self.linear = nn.Linear(32, 16)
                 self.config = config
         
-        # Create SVD model class
+        # Create OSFT model class
         config = MagicMock()
         config.vocab_size = 1000
-        SVDModelClass = create_svd_model_class(SimpleModel)
+        OSFTModelClass = create_osft_model_class(SimpleModel)
         
         # Initialize with custom dtypes
-        svd_config = {"linear.weight": 8}
-        model = SVDModelClass(
+        osft_config = {"linear.weight": 8}
+        model = OSFTModelClass(
             config=config,
-            svd_config=svd_config,
-            initialize_svd=False,  # Don't initialize to avoid needing real weights
+            osft_config=osft_config,
+            initialize_osft=False,  # Don't initialize to avoid needing real weights
             upcast_dtype=torch.float32,
             output_dtype=torch.bfloat16
         )
@@ -180,8 +180,8 @@ class TestSVDModelDtypeIntegration:
         assert model.upcast_dtype == torch.float32
         assert model.output_dtype == torch.bfloat16
     
-    def test_svd_model_reconstruction_uses_dtypes(self):
-        """Test that SVD model reconstruction uses the stored dtypes."""
+    def test_osft_model_reconstruction_uses_dtypes(self):
+        """Test that OSFT model reconstruction uses the stored dtypes."""
         class SimpleModel(nn.Module):
             def __init__(self, config):
                 super().__init__()
@@ -190,13 +190,13 @@ class TestSVDModelDtypeIntegration:
         
         config = MagicMock()
         config.vocab_size = 1000
-        SVDModelClass = create_svd_model_class(SimpleModel)
+        OSFTModelClass = create_osft_model_class(SimpleModel)
         
-        svd_config = {"linear.weight": 8}
-        model = SVDModelClass(
+        osft_config = {"linear.weight": 8}
+        model = OSFTModelClass(
             config=config,
-            svd_config=svd_config,
-            initialize_svd=True,
+            osft_config=osft_config,
+            initialize_osft=True,
             upcast_dtype=torch.float32,
             output_dtype=torch.bfloat16
         )
@@ -209,7 +209,7 @@ class TestSVDModelDtypeIntegration:
             # Should use model's output_dtype
             assert reconstructed.dtype == torch.bfloat16
     
-    @patch('mini_trainer.svd_utils.create_svd_model_class')
+    @patch('mini_trainer.osft_utils.create_osft_model_class')
     @patch('mini_trainer.setup_model_for_training.align_model_and_tokenizer')
     @patch('torch.distributed.is_initialized', return_value=False)
     @patch('torch.distributed.get_rank', return_value=0)
@@ -217,22 +217,22 @@ class TestSVDModelDtypeIntegration:
     @patch('mini_trainer.setup_model_for_training.AutoTokenizer')
     def test_setup_model_assigns_dtype_attributes(self, mock_tokenizer, mock_model_class, 
                                                  mock_get_rank, mock_is_initialized, 
-                                                 mock_align, mock_create_svd):
-        """Test that setup_model correctly assigns dtype attributes to SVD model."""
+                                                 mock_align, mock_create_osft):
+        """Test that setup_model correctly assigns dtype attributes to OSFT model."""
         # Create a real object to verify attribute assignment
-        class MockSVDModel:
+        class MockOSFTModel:
             def __init__(self):
                 self.config = MagicMock() 
                 self.config.use_cache = True
                 self.__class__.__name__ = "LlamaForCausalLM"  # Supported model name
-                # Make reinitialize_svd a MagicMock so we can track calls
-                self.reinitialize_svd = MagicMock()
+                # Make reinitialize_osft a MagicMock so we can track calls
+                self.reinitialize_osft = MagicMock()
             
             def to(self, device):
                 return self
         
-        # Create the mock SVD model instance
-        mock_svd_model = MockSVDModel()
+        # Create the mock OSFT model instance
+        mock_osft_model = MockOSFTModel()
         
         # Mock the temporary base model that gets created and deleted
         mock_temp_model = MagicMock()
@@ -248,10 +248,10 @@ class TestSVDModelDtypeIntegration:
         # Mock align_model_and_tokenizer to return the models as-is
         mock_align.side_effect = lambda model, tokenizer: model
         
-        # Mock the SVD class creation and instantiation
-        mock_svd_class = MagicMock()
-        mock_svd_class.from_pretrained.return_value = mock_svd_model
-        mock_create_svd.return_value = mock_svd_class
+        # Mock the OSFT class creation and instantiation
+        mock_osft_class = MagicMock()
+        mock_osft_class.from_pretrained.return_value = mock_osft_model
+        mock_create_osft.return_value = mock_osft_class
         
         # Call setup_model
         result = setup_model(
@@ -264,22 +264,22 @@ class TestSVDModelDtypeIntegration:
         )
         
         # Verify the attributes were set correctly on the returned model
-        assert result is mock_svd_model
+        assert result is mock_osft_model
         assert result.upcast_dtype == torch.float32
         assert result.output_dtype == torch.bfloat16
         
-        # Verify the SVD model was created from the temporary model's class
-        mock_create_svd.assert_called_once_with(mock_temp_model.__class__)
+        # Verify the OSFT model was created from the temporary model's class
+        mock_create_osft.assert_called_once_with(mock_temp_model.__class__)
         
-        # Verify from_pretrained was called on the SVD class
-        mock_svd_class.from_pretrained.assert_called_once()
+        # Verify from_pretrained was called on the OSFT class
+        mock_osft_class.from_pretrained.assert_called_once()
         
-        # Verify reinitialize_svd was called
-        assert hasattr(result, 'reinitialize_svd')
-        result.reinitialize_svd.assert_called_once_with(decompose_existing_weights=True)
+        # Verify reinitialize_osft was called
+        assert hasattr(result, 'reinitialize_osft')
+        result.reinitialize_osft.assert_called_once_with(decompose_existing_weights=True)
 
 
-class TestSVDParameterFlow:
+class TestOSFTParameterFlow:
     """Test end-to-end parameter flow for dtype parameters."""
     
     @patch('mini_trainer.train.setup_model')
@@ -330,7 +330,7 @@ class TestSVDParameterFlow:
             assert call_kwargs['osft_output_dtype'] == torch.float16
 
 
-class TestSVDDtypeEdgeCases:
+class TestOSFTDtypeEdgeCases:
     """Test edge cases and error conditions for dtype handling."""
     
     def test_svd_dict_preserves_device(self):

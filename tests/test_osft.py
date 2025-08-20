@@ -19,11 +19,11 @@ import subprocess
 
 from mini_trainer.api_train import run_training, StreamablePopen
 from mini_trainer.training_types import TorchrunArgs, TrainingArgs, TrainingMode
-from mini_trainer.svd_utils import (
-    auto_generate_target_svd_config, 
+from mini_trainer.osft_utils import (
+    auto_generate_target_osft_config, 
     get_model_config, 
-    is_svd_param,
-    create_svd_model_class,
+    is_osft_param,
+    create_osft_model_class,
     MODEL_CONFIGS,
     _get_model_patterns_from_name
 )
@@ -260,7 +260,7 @@ class TestOSFTAPIValidation:
                 assert f"--osft-rank-ratio={ratio}" in command
 
 
-class TestSVDConfigGeneration:
+class TestOSFTConfigGeneration:
     """Test SVD configuration generation with custom patterns."""
     
     def test_get_model_patterns_from_name(self):
@@ -298,8 +298,8 @@ class TestSVDConfigGeneration:
         patterns = get_model_config(None, target_patterns=None)
         assert patterns == MODEL_CONFIGS["default"]["patterns"]
     
-    def test_auto_generate_svd_config_with_custom_patterns(self):
-        """Test SVD config generation with custom target patterns."""
+    def test_auto_generate_osft_config_with_custom_patterns(self):
+        """Test OSFT config generation with custom target patterns."""
         # Create a mock model with various layers
         mock_model = MagicMock()
         mock_params = [
@@ -313,7 +313,7 @@ class TestSVDConfigGeneration:
         
         # Test with custom patterns
         custom_patterns = ["custom_proj", "another_proj"]
-        config = auto_generate_target_svd_config(
+        config = auto_generate_target_osft_config(
             mock_model,
             target_patterns=custom_patterns,
             rank_ratio=0.5
@@ -330,7 +330,7 @@ class TestSVDConfigGeneration:
         assert config["layer2.custom_proj.weight"] == 25  # min(100, 50) * 0.5
         assert config["layer2.another_proj.weight"] == 50  # min(200, 100) * 0.5
     
-    def test_auto_generate_svd_config_with_rank_ratio(self):
+    def test_auto_generate_osft_config_with_rank_ratio(self):
         """Test that rank_ratio correctly affects the generated config."""
         mock_model = MagicMock()
         mock_params = [
@@ -340,7 +340,7 @@ class TestSVDConfigGeneration:
         
         # Test different rank ratios
         for ratio in [0.1, 0.25, 0.5, 0.75, 0.9]:
-            config = auto_generate_target_svd_config(
+            config = auto_generate_target_osft_config(
                 mock_model,
                 target_patterns=["proj"],
                 rank_ratio=ratio
@@ -357,7 +357,7 @@ class TestSVDConfigGeneration:
         mock_params = [("layer.proj.weight", torch.zeros(50, 50))]
         mock_model.named_parameters.return_value = mock_params
         
-        config = auto_generate_target_svd_config(
+        config = auto_generate_target_osft_config(
             mock_model,
             target_patterns=["proj"],
             rank_ratio=1.0
@@ -371,7 +371,7 @@ class TestSVDConfigGeneration:
         ]
         mock_model.named_parameters.return_value = mock_params
         
-        config = auto_generate_target_svd_config(
+        config = auto_generate_target_osft_config(
             mock_model,
             target_patterns=["layer"],
             rank_ratio=0.5
@@ -380,33 +380,33 @@ class TestSVDConfigGeneration:
         assert "layer.bias" not in config  # 1D should be skipped
         assert "layer.weight" in config  # 2D should be included
     
-    def test_is_svd_param_function(self):
-        """Test the is_svd_param utility function."""
-        svd_config = {
+    def test_is_osft_param_function(self):
+        """Test the is_osft_param utility function."""
+        osft_config = {
             "layer1.weight": 10,
-            "layer2.weight": 0,  # 0 means not SVD
+            "layer2.weight": 0,  # 0 means not OSFT
         }
         
         # 2D param with positive rank in config
         param_2d = torch.zeros(100, 50)
-        assert is_svd_param("layer1.weight", param_2d, svd_config) is True
+        assert is_osft_param("layer1.weight", param_2d, osft_config) is True
         
         # 2D param with 0 rank in config
-        assert is_svd_param("layer2.weight", param_2d, svd_config) is False
+        assert is_osft_param("layer2.weight", param_2d, osft_config) is False
         
         # 2D param not in config
-        assert is_svd_param("layer3.weight", param_2d, svd_config) is False
+        assert is_osft_param("layer3.weight", param_2d, osft_config) is False
         
         # 1D param (should be False regardless)
         param_1d = torch.zeros(100)
-        assert is_svd_param("layer1.weight", param_1d, svd_config) is False
+        assert is_osft_param("layer1.weight", param_1d, osft_config) is False
 
 
-class TestSVDModelCreation:
-    """Test SVD model class creation and initialization."""
+class TestOSFTModelCreation:
+    """Test OSFT model class creation and initialization."""
     
-    def test_create_svd_model_class(self):
-        """Test that create_svd_model_class creates a valid subclass."""
+    def test_create_osft_model_class(self):
+        """Test that create_osft_model_class creates a valid subclass."""
         # Create a simple mock base class
         class MockModel(nn.Module):
             def __init__(self, config, **kwargs):
@@ -414,36 +414,36 @@ class TestSVDModelCreation:
                 self.config = config
                 self.linear = nn.Linear(10, 10)
         
-        # Create SVD model class
-        SVDModelClass = create_svd_model_class(MockModel)
+        # Create OSFT model class
+        OSFTModelClass = create_osft_model_class(MockModel)
         
         # Check class inheritance
-        assert issubclass(SVDModelClass, MockModel)
-        assert SVDModelClass.__name__ == "MockModelWithSVD"
+        assert issubclass(OSFTModelClass, MockModel)
+        assert OSFTModelClass.__name__ == "MockModelWithOSFT"
         
         # Check that required methods exist
-        assert hasattr(SVDModelClass, 'reinitialize_svd')
-        assert hasattr(SVDModelClass, 'reinitialize_svd_distributed')
-        assert hasattr(SVDModelClass, 'project_gradients')
-        assert hasattr(SVDModelClass, 'from_pretrained')
+        assert hasattr(OSFTModelClass, 'reinitialize_osft')
+        assert hasattr(OSFTModelClass, 'reinitialize_osft_distributed')
+        assert hasattr(OSFTModelClass, 'project_gradients')
+        assert hasattr(OSFTModelClass, 'from_pretrained')
     
-    def test_svd_model_initialization_without_svd(self):
-        """Test SVD model can be initialized without SVD decomposition."""
+    def test_osft_model_initialization_without_osft(self):
+        """Test OSFT model can be initialized without OSFT decomposition."""
         class MockModel(nn.Module):
             def __init__(self, config, **kwargs):
                 super().__init__()
                 self.config = config
                 self.dtype = torch.float32
         
-        SVDModelClass = create_svd_model_class(MockModel)
+        OSFTModelClass = create_osft_model_class(MockModel)
         
-        # Initialize without SVD
+        # Initialize without OSFT
         config = MagicMock()
-        model = SVDModelClass(config, svd_config={}, initialize_svd=False)
+        model = OSFTModelClass(config, osft_config={}, initialize_osft=False)
         
-        assert model.svd_config == {}
-        assert hasattr(model, 'svd_params')
-        assert len(model.svd_params) == 0
+        assert model.osft_config == {}
+        assert hasattr(model, 'osft_params')
+        assert len(model.osft_params) == 0
 
 
 class TestSetupModelIntegration:
@@ -452,28 +452,28 @@ class TestSetupModelIntegration:
     @patch('mini_trainer.setup_model_for_training.log_rank_0')
     @patch('mini_trainer.setup_model_for_training.AutoModelForCausalLM')
     @patch('mini_trainer.setup_model_for_training.AutoTokenizer')
-    @patch('mini_trainer.svd_utils.auto_generate_target_svd_config')
-    @patch('mini_trainer.svd_utils.create_svd_model_class')
-    def test_osft_params_flow_through_setup(self, mock_svd_class, mock_auto_config, mock_tokenizer_cls, mock_model_cls, mock_log):
+    @patch('mini_trainer.osft_utils.auto_generate_target_osft_config')
+    @patch('mini_trainer.osft_utils.create_osft_model_class')
+    def test_osft_params_flow_through_setup(self, mock_osft_class, mock_auto_config, mock_tokenizer_cls, mock_model_cls, mock_log):
         """Test that OSFT parameters flow through the setup correctly."""
-        # Test that SVD model creation gets the right parameters
+        # Test that OSFT model creation gets the right parameters
         mock_auto_config.return_value = {"layer.weight": 10}
         
-        # Mock the SVD model class
-        mock_svd_model_cls = MagicMock()
-        mock_svd_instance = MagicMock()
-        mock_svd_instance.config = MagicMock()
-        mock_svd_instance.config.vocab_size = 1000
-        mock_svd_instance.dtype = torch.float32
+        # Mock the OSFT model class
+        mock_osft_model_cls = MagicMock()
+        mock_osft_instance = MagicMock()
+        mock_osft_instance.config = MagicMock()
+        mock_osft_instance.config.vocab_size = 1000
+        mock_osft_instance.dtype = torch.float32
         
         # Setup from_pretrained to return a properly configured model
         def from_pretrained_side_effect(*args, **kwargs):
             # Store the kwargs for verification
-            mock_svd_model_cls.last_kwargs = kwargs
-            return mock_svd_instance
+            mock_osft_model_cls.last_kwargs = kwargs
+            return mock_osft_instance
         
-        mock_svd_model_cls.from_pretrained.side_effect = from_pretrained_side_effect
-        mock_svd_class.return_value = mock_svd_model_cls
+        mock_osft_model_cls.from_pretrained.side_effect = from_pretrained_side_effect
+        mock_osft_class.return_value = mock_osft_model_cls
         
         # Mock tokenizer and base model
         mock_tokenizer = MagicMock()
@@ -495,14 +495,14 @@ class TestSetupModelIntegration:
             model_name_or_path="test-model"
         )
         
-        # Verify the SVD model class was created
-        mock_svd_class.assert_called_once()
+        # Verify the OSFT model class was created
+        mock_osft_class.assert_called_once()
         
         # Verify from_pretrained was called with the right params
-        assert 'rank_ratio' in mock_svd_model_cls.last_kwargs
-        assert mock_svd_model_cls.last_kwargs['rank_ratio'] == 0.75
-        assert 'target_patterns' in mock_svd_model_cls.last_kwargs
-        assert mock_svd_model_cls.last_kwargs['target_patterns'] == ["custom.layer1", "custom.layer2"]
+        assert 'rank_ratio' in mock_osft_model_cls.last_kwargs
+        assert mock_osft_model_cls.last_kwargs['rank_ratio'] == 0.75
+        assert 'target_patterns' in mock_osft_model_cls.last_kwargs
+        assert mock_osft_model_cls.last_kwargs['target_patterns'] == ["custom.layer1", "custom.layer2"]
 
 
 class TestEndToEndOSFT:

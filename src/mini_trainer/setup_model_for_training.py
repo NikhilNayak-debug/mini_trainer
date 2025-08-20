@@ -9,7 +9,7 @@ from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
 from torch.distributed.device_mesh import init_device_mesh
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from mini_trainer.utils import log_rank_0, patch_target_module
-from mini_trainer.svd_utils import SVDModel
+from mini_trainer.osft_utils import OSFTModel
 
 
 
@@ -104,7 +104,7 @@ def setup_model(
     osft_rank_ratio: float | None = None,
     osft_target_patterns: list[str] | None = None,
     **kwargs,
-) -> torch.nn.Module | SVDModel:
+) -> torch.nn.Module | OSFTModel:
     base_model_args = {
         "pretrained_model_name_or_path": kwargs['model_name_or_path'],
     }
@@ -141,14 +141,14 @@ def setup_model(
         return align_model_and_tokenizer(model, tokenizer)
     
     # Load a subclassed model that supports orthogonal subspace learning using SVD decomposition
-    def load_svd_model():
+    def load_osft_model():
         # Import utility to decompose weights and inject projected low-rank updates
-        from mini_trainer.svd_utils import create_svd_model_class, auto_generate_target_svd_config
+        from mini_trainer.osft_utils import create_osft_model_class, auto_generate_target_osft_config
 
         tmp = ModelClass.from_pretrained(**base_model_args)
         tmp = align_model_and_tokenizer(tmp, tokenizer)
-        # Dynamically subclass model to override linear layers with SVD-decomposed versions
-        svd_cls = create_svd_model_class(tmp.__class__)
+        # Dynamically subclass model to override linear layers with OSFT-decomposed versions
+        osft_cls = create_osft_model_class(tmp.__class__)
         cfg = tmp.config
         del tmp
         torch.cuda.empty_cache()
@@ -159,10 +159,10 @@ def setup_model(
         if osft_target_patterns:
             osft_kwargs["target_patterns"] = osft_target_patterns
 
-        model: SVDModel = svd_cls.from_pretrained(
+        model: OSFTModel = osft_cls.from_pretrained(
             **base_model_args,
             config=cfg,
-            initialize_svd=False,
+            initialize_osft=False,
             **osft_kwargs,
         )
         
@@ -184,25 +184,25 @@ def setup_model(
 
         if not dist.is_initialized() or dist.get_world_size() == 1:
             # simple cases #1 and #2
-            model.reinitialize_svd(decompose_existing_weights=True)
+            model.reinitialize_osft(decompose_existing_weights=True)
             torch.cuda.empty_cache()
             return model
 
         # Use distributed SVD computation across all ranks
-        log_rank_0("🚀 Computing distributed SVD across all ranks")
+        log_rank_0("🚀 Computing distributed OSFT decomposition across all ranks")
         world_size = dist.get_world_size()
-        log_rank_0(f"Distributing SVD work across {world_size} ranks")
+        log_rank_0(f"Distributing OSFT work across {world_size} ranks")
 
-        # Initialize SVD using distributed computation
-        model.reinitialize_svd_distributed()
+        # Initialize OSFT using distributed computation
+        model.reinitialize_osft_distributed()
 
-        log_rank_0("✅ Distributed SVD computation complete")
+        log_rank_0("✅ Distributed OSFT decomposition complete")
         torch.cuda.empty_cache()
         return model
     
     # Choose whether to apply orthogonal subspace learning (OSL) based on `osft` flag
     # OSL enables continual fine-tuning by constraining updates to low-rank directions orthogonal to critical knowledge that is to be preserved
-    model = load_svd_model() if osft else load_standard_model()
+    model = load_osft_model() if osft else load_standard_model()
 
     if model.__class__.__name__ not in [
         "MistralForCausalLM",
@@ -259,7 +259,7 @@ def setup_training_components(
         betas=(0.9, 0.95),
         weight_decay=0.0,
     )
-    from mini_trainer.svd_utils import optim_wrapper
+    from mini_trainer.osft_utils import optim_wrapper
     optimizer = optim_wrapper(optimizer, model)
     # Prepare scheduler kwargs
     if scheduler_kwargs is None:

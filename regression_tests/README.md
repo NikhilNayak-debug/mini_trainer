@@ -16,19 +16,19 @@ Performance benchmarks and efficiency analysis for batch packing algorithms:
 python regression_tests/benchmark_batching.py
 ```
 
-### `test_svd_fidelity_script.py`
-Script for testing SVD decomposition and reconstruction fidelity:
-- Verifies that SVD-decomposed models can accurately reconstruct original parameters
-- Tests distributed SVD initialization
+### `test_osft_fidelity_script.py`
+Script for testing OSFT (Orthogonal Subspace Fine-Tuning) decomposition and reconstruction fidelity:
+- Verifies that OSFT-decomposed models can accurately reconstruct original parameters
+- Tests distributed SVD computation for OSFT initialization
 - Measures numerical accuracy and reconstruction errors
 
 **Usage:**
 ```bash
 # Single GPU
-python regression_tests/test_svd_fidelity_script.py
+python regression_tests/test_osft_fidelity_script.py
 
 # Multiple GPUs (distributed testing)
-torchrun --nnodes=1 --nproc-per-node=4 regression_tests/test_svd_fidelity_script.py
+torchrun --nnodes=1 --nproc-per-node=4 regression_tests/test_osft_fidelity_script.py
 ```
 
 ## Purpose
@@ -48,8 +48,8 @@ To run all regression tests and benchmarks:
 # Run batching benchmarks
 python regression_tests/benchmark_batching.py
 
-# Run SVD fidelity tests (requires model downloads)
-python regression_tests/test_svd_fidelity_script.py --model-name-or-path "Qwen/Qwen2.5-1.5B-Instruct"
+# Run OSFT fidelity tests (requires model downloads)
+python regression_tests/test_osft_fidelity_script.py --model-name-or-path "Qwen/Qwen2.5-1.5B-Instruct"
 ```
 
 ## Interpreting Results
@@ -59,7 +59,7 @@ python regression_tests/test_svd_fidelity_script.py --model-name-or-path "Qwen/Q
 - **Overall Efficiency**: Higher is better (less wasted capacity)
 - **Execution Time**: Lower is better (faster algorithm)
 
-### SVD Fidelity
+### OSFT Fidelity
 - **Success Rate**: Percentage of parameters matching within tolerance
 - **Max Difference**: Maximum deviation from original parameters
 - **Average Difference**: Mean deviation across all parameters

@@ -214,7 +214,7 @@ class TestSetupTrainingComponents:
     @patch('mini_trainer.setup_model_for_training.wrap_fsdp2')
     @patch('transformers.get_scheduler')
     @patch('mini_trainer.setup_model_for_training.torch.optim.AdamW')
-    @patch('mini_trainer.svd_utils.optim_wrapper')
+    @patch('mini_trainer.osft_utils.optim_wrapper')
     @patch('mini_trainer.setup_model_for_training.log_rank_0')
     def test_setup_training_components_basic(self, mock_log, mock_optim_wrapper, 
                                             mock_adamw, mock_scheduler, mock_wrap, mock_model):
@@ -273,7 +273,7 @@ class TestSetupTrainingComponents:
     @patch('mini_trainer.setup_model_for_training.wrap_fsdp2')
     @patch('transformers.get_scheduler')
     @patch('mini_trainer.setup_model_for_training.torch.optim.AdamW')
-    @patch('mini_trainer.svd_utils.optim_wrapper')
+    @patch('mini_trainer.osft_utils.optim_wrapper')
     @patch('mini_trainer.setup_model_for_training.log_rank_0')
     def test_setup_training_components_different_scheduler(self, mock_log, mock_optim_wrapper,
                                                           mock_adamw, mock_scheduler, mock_wrap, mock_model):
@@ -344,7 +344,7 @@ class TestIntegration:
                         # Setup training components
                         with patch('mini_trainer.setup_model_for_training.torch.optim.AdamW') as mock_adamw:
                             with patch('transformers.get_scheduler') as mock_sched:
-                                with patch('mini_trainer.svd_utils.optim_wrapper') as mock_opt_wrap:
+                                with patch('mini_trainer.osft_utils.optim_wrapper') as mock_opt_wrap:
                                     mock_optimizer = MagicMock()
                                     mock_adamw.return_value = mock_optimizer
                                     mock_opt_wrap.return_value = mock_optimizer

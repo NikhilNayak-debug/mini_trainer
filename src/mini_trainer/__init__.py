@@ -13,7 +13,7 @@ from . import batch_packer
 from . import none_reduction_losses
 from . import sampler
 from . import setup_model_for_training
-from . import svd_utils
+from . import osft_utils
 from . import train
 from . import utils
 
@@ -29,7 +29,7 @@ __all__ = [
     "none_reduction_losses",
     "sampler",
     "setup_model_for_training",
-    "svd_utils",
+    "osft_utils",
     "train",
     "utils",
     # Main API exports

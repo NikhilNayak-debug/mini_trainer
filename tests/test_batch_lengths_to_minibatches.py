@@ -44,21 +44,21 @@ class TestBatchLengthsToMinibatches:
         
         # Test both algorithms
         for algo_fn in [batch_lengths_to_minibatches, batch_lengths_to_minibatches_lpt]:
-            # Get results for both ranks
+        # Get results for both ranks
             rank0_result = algo_fn(batch_lengths, max_tokens, num_ranks, 0)
             rank1_result = algo_fn(batch_lengths, max_tokens, num_ranks, 1)
+        
+        # Should have same number of minibatches
+        assert len(rank0_result) == len(rank1_result)
+        
+        # Check no sequence exceeds max_tokens per rank
+        for minibatch in rank0_result:
+            total_tokens = sum(batch_lengths[i] for i in minibatch if i != -1)
+            assert total_tokens <= max_tokens
             
-            # Should have same number of minibatches
-            assert len(rank0_result) == len(rank1_result)
-            
-            # Check no sequence exceeds max_tokens per rank
-            for minibatch in rank0_result:
-                total_tokens = sum(batch_lengths[i] for i in minibatch if i != -1)
-                assert total_tokens <= max_tokens
-                
-            for minibatch in rank1_result:
-                total_tokens = sum(batch_lengths[i] for i in minibatch if i != -1)
-                assert total_tokens <= max_tokens
+        for minibatch in rank1_result:
+            total_tokens = sum(batch_lengths[i] for i in minibatch if i != -1)
+            assert total_tokens <= max_tokens
     
     def test_no_duplicates_across_ranks(self):
         """Test that no sequence appears in multiple ranks."""
@@ -76,10 +76,10 @@ class TestBatchLengthsToMinibatches:
                         if idx != -1:
                             assert idx not in all_assigned_indices, f"Index {idx} assigned to multiple ranks"
                             all_assigned_indices.add(idx)
-            
-            # All non-padding indices should be covered
-            expected_indices = set(range(len(batch_lengths)))
-            assert all_assigned_indices == expected_indices
+        
+        # All non-padding indices should be covered
+        expected_indices = set(range(len(batch_lengths)))
+        assert all_assigned_indices == expected_indices
     
     def test_token_limit_enforcement(self):
         """Test that token limits are strictly enforced."""
@@ -94,7 +94,7 @@ class TestBatchLengthsToMinibatches:
                 for minibatch in rank_result:
                     total_tokens = sum(batch_lengths[i] for i in minibatch if i != -1)
                     assert total_tokens <= max_tokens, f"Rank {rank} exceeded token limit: {total_tokens} > {max_tokens}"
-    
+
     def test_padding_in_incomplete_minibatches(self):
         """Test that incomplete minibatches have proper padding."""
         batch_lengths = [50000, 50000, 50000]  # 3 sequences that need individual minibatches

@@ -3,9 +3,7 @@ import torch.distributed as dist
 import torch.nn as nn
 import os
 import time
-from setup_model_for_training import setup_model
-from utils import init_distributed_environment, log_rank_0
-from svd_utils import get_svd_target_parameters, create_svd_model_class, reconstruct_weight_matrix
+from mini_trainer.osft_utils import create_osft_model_class, reconstruct_weight_matrix
 import typer
 import tempfile
 import random
@@ -112,7 +110,7 @@ def projection_test_template():
         fp = os.path.join(temp_dir, 'planck-llama')
         print(f'saving model to {fp!r}')
         tlm.save_pretrained(fp)
-        svd_cls = create_svd_model_class(tlm.__class__)
+        svd_cls = create_osft_model_class(tlm.__class__)
         print(f'loading pretrained model from {fp!r}')
         svd_lm = svd_cls.from_pretrained(fp, config=config,initialize_svd=True, output_dtype=torch.float64, upcast_dtype=torch.float64)
 
@@ -456,7 +454,7 @@ if __name__ == '__main__':
         fp = os.path.join(temp_dir, 'planck-llama')
         print(f'saving model to {fp!r}')
         tlm.save_pretrained(fp)
-        svd_cls = create_svd_model_class(tlm.__class__)
+        svd_cls = create_osft_model_class(tlm.__class__)
         print(f'loading pretrained model from {fp!r}')
         svd_lm = svd_cls.from_pretrained(
             fp,
