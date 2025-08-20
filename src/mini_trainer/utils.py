@@ -10,6 +10,8 @@ from torch.distributed import is_initialized, get_rank
 import torch.distributed as dist
 from rich.logging import RichHandler
 
+from mini_trainer.training_types import TorchrunArgs
+
 def get_caller(num_frames=1):
     frame = inspect.currentframe().f_back
     for _ in range(num_frames - 1):

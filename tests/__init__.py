@@ -1,1 +1,6 @@
-# Tests package for batch_lengths_to_minibatches functionality
+"""
+Test suite for mini_trainer package.
+
+This package contains comprehensive unit tests for all critical components
+of the distributed training pipeline.
+"""

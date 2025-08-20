@@ -36,11 +36,23 @@ dependencies = [
     "numba",
     "rich",
     "pytest",
+    "tox",
+    "tox-uv",
 ]
 
 [project.optional-dependencies]
 cuda = [
     "flash-attn>=2.8.2",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-mock",
+]
+dev = [
+    "ruff",
+    "ipython", 
+    "ipdb",
 ]
 
 [project.urls]
@@ -49,8 +61,28 @@ Repository = "https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer"
 Issues = "https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer/issues"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["mini_trainer*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gpu: marks tests that require GPU",
+    "multi_gpu: marks tests that require multiple GPUs",
+]

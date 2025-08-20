@@ -1,16 +1,16 @@
 """
-Test script to verify SVD decomposition and reconstruction fidelity.
+Test script to verify OSFT decomposition and reconstruction fidelity.
 
-This script tests that when a model is created with distributed SVD initialization,
+This script tests that when a model is created with distributed OSFT initialization,
 the reconstructed parameters from the decomposed SVD parts are identical to the
 original untouched model parameters (within numerical tolerance).
 
 Usage:
     # Single GPU
-    python test_svd_reconstruction_fidelity.py
+    python test_osft_fidelity_script.py
 
-    # Multiple GPUs (to test distributed SVD)
-    torchrun --nnodes=1 --nproc-per-node=4 test_svd_reconstruction_fidelity.py
+    # Multiple GPUs (to test distributed SVD computation)
+    torchrun --nnodes=1 --nproc-per-node=4 test_osft_fidelity_script.py
 """
 
 import torch
@@ -18,9 +18,9 @@ import torch.distributed as dist
 import torch.nn as nn
 import os
 import time
-from setup_model_for_training import setup_model
-from utils import init_distributed_environment, log_rank_0
-from svd_utils import get_svd_target_parameters
+from mini_trainer.setup_model_for_training import setup_model
+from mini_trainer.utils import init_distributed_environment, log_rank_0
+from mini_trainer.osft_utils import get_osft_target_parameters
 import typer
 
 
@@ -28,42 +28,49 @@ app = typer.Typer()
 
 
 def load_original_model(model_name_or_path, use_liger_kernels=False):
-    """Load the original model without SVD decomposition."""
+    """Load the original model without OSFT decomposition."""
     rank = int(os.environ.get("RANK", 0))
 
-    log_rank_0("Loading original model (no SVD)...")
+    log_rank_0("Loading original model (no OSFT)...")
     original_model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
-        orthogonal_subspace_learning=False,  # No SVD
+        osft=False,  # No OSFT
         rank=rank,
     )
     return original_model
 
 
-def load_svd_model(model_name_or_path, use_liger_kernels=False):
-    """Load the model with distributed SVD initialization."""
+def load_osft_model(model_name_or_path, use_liger_kernels=False):
+    """Load the model with distributed OSFT initialization.
+    
+    Note: We use float64 for upcast_dtype and output_dtype to ensure accurate
+    orthogonality and rank checks. With float32 and especially bfloat16, 
+    numerical precision issues make it very difficult to verify orthogonality.
+    As matrix size increases, even float64 may not be sufficient for perfect
+    orthogonality validation.
+    """
     rank = int(os.environ.get("RANK", 0))
 
-    log_rank_0("Loading SVD model (with distributed SVD)...")
-    svd_model = setup_model(
+    log_rank_0("Loading OSFT model (with distributed SVD decomposition)...")
+    osft_model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,
-        orthogonal_subspace_learning=True,  # Enable SVD
+        osft=True,  # Enable OSFT
         rank=rank,
-        upcast_dtype=torch.float64,
-        output_dtype=torch.float64,
+        upcast_dtype=torch.float64,  # Use float64 for better numerical stability
+        output_dtype=torch.float64,  # Maintain precision in output
     )
-    return svd_model
+    return osft_model
 
 
-def compare_parameters(original_model, svd_model, tolerance=1e-5):
+def compare_parameters(original_model, osft_model, tolerance=1e-5):
     """
-    Compare parameters between original model and reconstructed SVD model.
+    Compare parameters between original model and reconstructed OSFT model.
 
     Args:
-        original_model: Model without SVD decomposition
-        svd_model: Model with SVD decomposition
+        original_model: Model without OSFT decomposition
+        osft_model: Model with OSFT decomposition
         tolerance: Numerical tolerance for comparison
 
     Returns:
@@ -81,8 +88,8 @@ def compare_parameters(original_model, svd_model, tolerance=1e-5):
     }
 
     # # Get parameters that should be decomposed
-    # if hasattr(svd_model, "svd_config"):
-    #     target_params = get_svd_target_parameters(svd_model, svd_model.svd_config)
+    # if hasattr(osft_model, "osft_config"):
+    #     target_params = get_osft_target_parameters(osft_model, osft_model.osft_config)
     #     target_param_names = set(name for name, _ in target_params)
     # else:
     #     target_param_names = set()
@@ -93,25 +100,25 @@ def compare_parameters(original_model, svd_model, tolerance=1e-5):
     # # this is how we need to compare the parameters
     # ignored_params = []
     # for orig_name, original_param in original_model.state_dict():
-    #     if orig_name not in svd_model.name_mapping:
+    #     if orig_name not in osft_model.name_mapping:
     #         # save this for logging purposes later
     #         ignored_params += [orig_name]
     #         continue
 
-    #     reconstructed_param = svd_model._reconstruct_weight(orig_name)
+    #     reconstructed_param = osft_model._reconstruct_weight(orig_name)
     #     # now we can compare original_param with reconstructed_param
 
     ignored_params = []
     for orig_name, original_param in original_model.state_dict().items():
         name = orig_name
-        if orig_name not in svd_model.name_mapping:
+        if orig_name not in osft_model.name_mapping:
             # this one isnt in the svd params so we ignore
             ignored_params += [orig_name]
             continue
 
         # This parameter was decomposed, so reconstruct it
         try:
-            comparison_param = svd_model._reconstruct_weight(orig_name)
+            comparison_param = osft_model._reconstruct_weight(orig_name)
             param_type = "reconstructed"
         except Exception as e:
             # If reconstruction fails, skip this parameter
@@ -185,7 +192,7 @@ def compare_parameters(original_model, svd_model, tolerance=1e-5):
 def print_results(results, tolerance):
     """Print comparison results in a formatted way."""
     print(f"\n{'=' * 60}")
-    print(f"SVD RECONSTRUCTION FIDELITY TEST RESULTS")
+    print(f"OSFT RECONSTRUCTION FIDELITY TEST RESULTS")
     print(f"{'=' * 60}")
 
     print(f"Parameters compared: {results['total_params_compared']}")
@@ -210,7 +217,7 @@ def print_results(results, tolerance):
     direct_count = sum(1 for p in results["param_details"] if p["type"] == "direct")
 
     print(f"🔧 Parameter Types:")
-    print(f"  Reconstructed from SVD: {reconstructed_count}")
+    print(f"  Reconstructed from OSFT: {reconstructed_count}")
     print(f"  Direct comparison: {direct_count}")
     print(f"")
 
@@ -252,10 +259,10 @@ def print_results(results, tolerance):
     print(f"{'=' * 60}")
 
 
-def compare_params(original_model: nn.Module, svd_model: nn.Module):
+def compare_params(original_model: nn.Module, osft_model: nn.Module):
     # here we can compare the original parameters
     for k, orig_w in original_model.state_dict().items():
-        if k not in svd_model.name_mapping:
+        if k not in osft_model.name_mapping:
             print("we dont do this one")
             continue
 
@@ -269,7 +276,7 @@ def test_reconstruction_fidelity(
     tolerance: float = typer.Option(1e-5, help="Numerical tolerance for comparison"),
     verbose: bool = typer.Option(False, help="Show detailed parameter comparison"),
 ):
-    """Test SVD reconstruction fidelity."""
+    """Test OSFT reconstruction fidelity."""
 
     # Initialize distributed environment
     init_distributed_environment()
@@ -277,15 +284,15 @@ def test_reconstruction_fidelity(
     rank = int(os.environ.get("RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
-    log_rank_0(f"🧪 Testing SVD reconstruction fidelity with {world_size} ranks")
+    log_rank_0(f"🧪 Testing OSFT reconstruction fidelity with {world_size} ranks")
     log_rank_0(f"Model: {model_name_or_path}")
     log_rank_0(f"Tolerance: {tolerance:.2e}")
 
-    # Load SVD model
+    # Load OSFT model
     start_time = time.time()
-    svd_model = load_svd_model(model_name_or_path, use_liger_kernels)
-    svd_time = time.time() - start_time
-    log_rank_0(f"⏱️ SVD model loaded in {svd_time:.2f}s")
+    osft_model = load_osft_model(model_name_or_path, use_liger_kernels)
+    osft_time = time.time() - start_time
+    log_rank_0(f"⏱️ OSFT model loaded in {osft_time:.2f}s")
 
     # Compare parameters (only on rank 0 to avoid redundant work)
     if rank == 0:
@@ -300,7 +307,7 @@ def test_reconstruction_fidelity(
 
         log_rank_0("🔍 Comparing parameters...")
         start_time = time.time()
-        results = compare_parameters(original_model, svd_model, tolerance)
+        results = compare_parameters(original_model, osft_model, tolerance)
         comparison_time = time.time() - start_time
         log_rank_0(f"⏱️ Parameter comparison completed in {comparison_time:.2f}s")
 
@@ -323,7 +330,7 @@ def test_reconstruction_fidelity(
     if world_size > 1:
         dist.barrier()
 
-    log_rank_0("🎉 SVD reconstruction fidelity test completed!")
+    log_rank_0("🎉 OSFT reconstruction fidelity test completed!")
 
 
 if __name__ == "__main__":

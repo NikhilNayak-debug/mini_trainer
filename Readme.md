@@ -1,5 +1,7 @@
 # Mini Trainer
 
+[![PR Tests](https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer/actions/workflows/pr-tests.yml/badge.svg)](https://github.com/Red-Hat-AI-Innovation-Team/mini_trainer/actions/workflows/pr-tests.yml)
+
 MiniTrainer is a small form factor and extremely efficient training library for models up to 70B parameters on a single 8xA100/H100 node, although it supports multinode training if your infrastructure has ROCE/Infiniband.
 
 ### Features:
@@ -14,7 +16,7 @@ MiniTrainer is a small form factor and extremely efficient training library for 
 
 ### 🔥 What's New (July-02-2025) - High-Performance Batch Packing
 
-- **Orthogonal Subspace Learning (OSFT)** mode: allows fine-tuning in a parameter-efficient low-rank subspace while freezing parts of the core model that need to be preserved for continual learning scenarios. Controlled via `--orthogonal-subspace-learning` flag.
+- **Orthogonal Subspace Learning (OSFT)** mode: allows fine-tuning in a parameter-efficient low-rank subspace while freezing parts of the core model that need to be preserved for continual learning scenarios. Controlled via `--osft` flag.
 - **Numba-Optimized LPT Batch Packing**: Implemented high-performance LPT (Longest Processing Time) algorithm with JIT compilation for optimal load balancing across GPUs. Achieves 3.5x better speed than greedy while providing up to 217% better load balance, 60-89% lower variance, and 33% fewer minibatches.
 - **Comprehensive test suite**: Added extensive testing framework in `tests/` folder with realistic outlier scenarios and performance benchmarks.
 
@@ -95,8 +97,7 @@ if you want to pretrain on some samples, such samples should have a messages for
 all training parameters can be found in [train.py](./train.py). Make sure to use the tokenized data created above as the input here.
 
 ```shell
-torchrun --nnodes=1 --nproc-per-node=7 train.py \
-        --orthogonal-subspace-learning \
+torchrun --nnodes=1 --nproc-per-node=8 train.py \
         --output-dir /new_data/aldo/balrog_test \
         --data-path ./tokenized_data.jsonl \
         --model-name-or-path Qwen/Qwen2.5-1.5B-instruct \
@@ -111,8 +112,32 @@ torchrun --nnodes=1 --nproc-per-node=7 train.py \
 
 The parameters used for the run will be saved in `<output_dir>/training_params.json` and the metrics will be saved to `<output_dir>/training_metrics_0.jsonl`.
 
-NOTE: keep an eye on `nvidia-smi` while training and raise the `max-tokens-per-gpu` until you're close (but not quite to avoid cuda memory re allocations) to the max memory in your GPUs.
+NOTE: keep an eye on `nvidia-smi` or `nvtop` while training and raise the `max-tokens-per-gpu` until you're close (but not quite to avoid cuda memory re allocations) to the max memory in your GPUs.
 
+## Continual Learning / OSFT
+
+mini_trainer also supports a novel technique for continual learning known as **Orthogonal Subspace Fine-Tuning**, or OSFT for short.
+
+This method allows you to target the pieces of your language model which are least likely to contain valuable task-specific information. 
+
+To run this method with `mini_trainer`, simply pass the `--osft` flag to enable the technique, and pass the `--osft-unfreeze-rank-ratio` parameter to specify how much of the model's most important pieces you would like to remain frozen (where a value of 0.0 means everything is frozen, and 1.0 means we train all of the singular values).
+
+```bash
+torchrun --nnodes=1 --nproc-per-node=8 train.py \
+        --output-dir /new_data/aldo/balrog_test \
+        --data-path ./tokenized_data.jsonl \
+        --model-name-or-path Qwen/Qwen2.5-1.5B-instruct \
+        --min-samples-per-checkpoint 2000 \
+        --num-warmup-steps 20 \
+        --max-tokens-per-gpu 128000 \
+        --batch-size 128 \
+        --use-liger-kernels \
+        --seed 893 \
+        --learning-rate 6e-6 \
+        --osft \
+        --osft-unfreeze-rank-ratio 0.25  # trains the 25% of the model which give the least amount of information
+
+```
 
 ### Multinode Training
 
@@ -195,7 +220,76 @@ Adjust the SBATCH directives and paths (`train.py`, `--data-path`, `--output-dir
 
 # Testing
 
-Run the test suite to verify batch packing performance:
+The project uses tox with uv for fast, isolated testing across multiple Python versions. Tests are located in the `tests/` directory and provide comprehensive coverage of:
+
+- **Data Pipeline**: Dataset loading, sampling, batching, and collation
+- **Model Setup**: Initialization, FSDP wrapping, optimizer configuration, and Liger kernels
+- **Training Loop**: Forward/backward passes, gradient accumulation, and checkpointing
+- **Distributed Training**: Multi-rank coordination, metrics reduction, and synchronization
+- **Batch Packing**: Performance comparisons between greedy and LPT algorithms
+- **Utilities**: Logging, memory management, and configuration handling
+
+## Quick Testing
+
+```shell
+# Run all tests
+uv run tox -e test
+
+# Run tests with verbose output
+uv run tox -e test-verbose
+
+# Run until first failure (fast feedback)
+uv run tox -e test-quick
+
+# Run with coverage report
+uv run tox -e test-coverage
+```
+
+## Multi-Python Testing
+
+```shell
+# Test on Python 3.11
+uv run tox -e py311
+
+# Test on Python 3.12  
+uv run tox -e py312
+
+# Test on all supported Python versions
+uv run tox
+```
+
+## Code Quality
+
+```shell
+# Check code style with ruff
+uv run tox -e lint
+
+# Fix linting issues automatically
+uv run tox -e lint-fix
+
+# Format code
+uv run tox -e format
+
+# Check if code is formatted
+uv run tox -e format-check
+```
+
+## Running Specific Tests
+
+```shell
+# Run specific test file
+uv run tox -e test -- tests/test_batch_lengths_to_minibatches.py
+
+# Run specific test class
+uv run tox -e test -- tests/test_batch_lengths_to_minibatches.py::TestBatchLengthsToMinibatches
+
+# Run specific test method
+uv run tox -e test-quick -- tests/test_batch_lengths_to_minibatches.py::TestBatchLengthsToMinibatches::test_empty_batch
+```
+
+## Legacy Test Runner
+
+For comprehensive batch packing performance analysis:
 
 ```shell
 cd tests && python run_tests.py

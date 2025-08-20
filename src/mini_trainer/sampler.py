@@ -4,8 +4,8 @@ designed for efficient distributed training of sequence models, particularly
 large language models, on multiple GPUs.
 
 Key Features:
-- Infinite Sampler: Provides an endless stream of shuffled data indices,
-  suitable for training for a fixed number of steps rather than epochs.
+- Epoch-based Sampler: Provides shuffled data indices for each epoch,
+  suitable for both finite and infinite training modes.
 - Initial Batching: Groups samples into initial batches based on a fixed number
   of samples per batch.
 - Dynamic Minibatching for Distributed Training: Takes the initial batches and
@@ -23,15 +23,21 @@ Key Features:
   to fill a minibatch by using dummy samples, ensuring all ranks process the
   same number of minibatches.
 """
-from itertools import chain
 from deprecated import deprecated
+from itertools import chain
+import json
+import os
+import pytest
+import tempfile
+from unittest.mock import patch
 
 import torch
 from torch.utils.data import Sampler, Dataset, DataLoader
 import torch.distributed as dist
 import numpy as np
 from datasets import load_dataset
-from batch_packer import batch_lengths_to_minibatches_lpt
+from mini_trainer.batch_packer import batch_lengths_to_minibatches_lpt
+
 
 def reset_minibatches(num_ranks: int):
     return [[] for _ in range(num_ranks)], np.zeros(num_ranks)
@@ -121,35 +127,36 @@ class JsonlDataset(Dataset):
             'num_loss_counted_tokens': loss_counted_tokens,
         }
     
-        
-class InfiniteSampler(Sampler):
-    """Infinitely yields shuffled dataset indices. Crucially, in distributed
-    training, it provides the *same* index sequence to all ranks.
-
-    Reshuffles indices using a seed incremented per cycle. The actual distribution
-    of samples/indices to specific ranks must be handled later (e.g., by a collate_fn).
-
-    Args:
-        len_data: The size of the dataset.
-        seed: Initial random seed for shuffling (incremented each cycle).
+class EpochSampler(Sampler):
     """
-    def __init__(self, len_data, seed: int = 37):
+    Here we redefine RandomSampler so we can have a consistent signature with InfiniteSampler
+    """
+    def __init__(self, len_data: int, seed: int = 67, epoch: int = 0):
         self.len_data = len_data
         self.seed = seed
+        self._epoch = epoch
+
+    @property
+    def epoch(self) -> int:
+        return self._epoch
+
+    def set_epoch(self, epoch: int):
+        self._epoch = epoch
+
+    def generate_samples(self):
+        g = torch.Generator()
+        g.manual_seed(self.seed + self._epoch)
+        samples = torch.randperm(self.len_data, generator=g).tolist()
+        return samples 
 
     def __iter__(self):
-        """Yields an infinite stream of shuffled dataset indices."""
-        epoch = 0
-        while True:
-            g = torch.Generator()
-            g.manual_seed(self.seed + epoch)
-            indices = torch.randperm(self.len_data, generator=g).tolist()
-            yield from indices
-            epoch += 1
-    
+        samples = self.generate_samples()
+        yield from samples
+
     def __len__(self):
         return self.len_data
-    
+
+
 def mb_collate_fn(minibatch, batch_num_loss_counted_tokens):
     """Collates a list of samples into a single packed batch for Flash Attention.
 
@@ -264,34 +271,50 @@ class MaxTokensPerRankCollator:
         batch_ = [b for b in batch if b['len'] <= self.max_tokens_per_rank]
         if len(batch_) < len(batch):
             print(f"\033[38;5;196mremoved {len(batch) - len(batch_)} samples from batch because they are longer than the max tokens per gpu\033[0m")
-        batch_lengths = [sample['len'] for sample in batch]
-        batch_num_loss_counted_tokens = sum([sample['num_loss_counted_tokens'] for sample in batch])
+        # Use filtered batch for lengths and loss counts
+        batch_lengths = [sample['len'] for sample in batch_]
+        batch_num_loss_counted_tokens = sum([sample['num_loss_counted_tokens'] for sample in batch_])
         all_minibatches_indices = batch_lengths_to_minibatches_lpt(batch_lengths, self.max_tokens_per_rank, self.world_size, self.rank)
         
         all_minibatches = []
         for mb_indices in all_minibatches_indices:
-            mb = [batch[i] if i != -1 else self.dummy_sample for i in mb_indices]
+            mb = [batch_[i] if i != -1 else self.dummy_sample for i in mb_indices]
             all_minibatches.append(mb_collate_fn(mb, batch_num_loss_counted_tokens))
 
         return all_minibatches
     
-def get_data_loader(**kwargs):
-    # from ipdb import set_trace; set_trace()
-    dataset = JsonlDataset(kwargs['data_path'])
-    batch_size = kwargs['batch_size']
-    max_tokens_per_rank = kwargs['max_tokens_per_gpu']
-    seed = kwargs['seed']
-    rank = kwargs.get('rank', None)
-    world_size = kwargs.get('world_size', None)
-    dummy_sample = kwargs.get('dummy_sample', None)
-    return DataLoader(dataset, 
-                      batch_size, 
-                      sampler=InfiniteSampler(len(dataset), seed=seed),
-                      collate_fn=MaxTokensPerRankCollator(max_tokens_per_rank, 
-                                                          rank=rank, 
-                                                          world_size=world_size, 
-                                                          dummy_sample=dummy_sample),
-                      num_workers=4)
+def get_data_loader(
+    data_path: str,
+    batch_size: int,
+    max_tokens_per_gpu: int,
+    seed: int,
+    rank: int | None = None,
+    world_size: int | None = None,
+    dummy_sample: dict | None = None,
+    num_workers: int = 0,
+):
+    """Create a data loader with epoch-based sampling.
+    
+    The EpochSampler is used for all training modes (EPOCH, STEP, TOKEN, and INFINITE).
+    For infinite training, the training loop will continue iterating over epochs indefinitely.
+    """
+    dataset = JsonlDataset(data_path)
+    sampler = EpochSampler(len(dataset), seed=seed)
+    
+    return DataLoader(
+        dataset, 
+        batch_size, 
+        sampler=sampler,
+        collate_fn=MaxTokensPerRankCollator(
+            max_tokens_per_gpu, 
+            rank=rank, 
+            world_size=world_size, 
+            dummy_sample=dummy_sample,
+        ),
+        num_workers=num_workers,
+        persistent_workers=(num_workers > 0),
+        drop_last=False,
+    )
 
 if __name__ == "__main__":
     data_loader = get_data_loader(data_path="test.jsonl",
@@ -313,4 +336,3 @@ if __name__ == "__main__":
     from IPython import embed
     embed()
 
-                
