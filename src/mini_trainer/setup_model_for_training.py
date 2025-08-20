@@ -101,6 +101,8 @@ def setup_model(
     rank: int = 0,
     upcast_dtype: torch.dtype = torch.float32,
     output_dtype: torch.dtype | None = None,
+    osft_rank_ratio: float | None = None,
+    osft_target_patterns: list[str] | None = None,
     **kwargs,
 ) -> torch.nn.Module | SVDModel:
     base_model_args = {
@@ -150,10 +152,18 @@ def setup_model(
         cfg = tmp.config
         del tmp
         torch.cuda.empty_cache()
+
+        osft_kwargs = {}
+        if osft_rank_ratio:
+            osft_kwargs["rank_ratio"] = osft_rank_ratio
+        if osft_target_patterns:
+            osft_kwargs["target_patterns"] = osft_target_patterns
+
         model: SVDModel = svd_cls.from_pretrained(
             **base_model_args,
             config=cfg,
             initialize_svd=False,
+            **osft_kwargs,
         )
         
         # we need to set these as attributes because HF Transformers

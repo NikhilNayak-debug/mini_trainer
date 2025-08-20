@@ -392,6 +392,7 @@ class TestMainCLI:
                 seed=42,
                 use_liger_kernels=True,
                 osft=True,
+                osft_rank_ratio=0.5,
                 output_dir=temp_dir,
                 logging_level=LogLevelEnum.DEBUG,
                 min_samples_per_checkpoint=500
@@ -409,6 +410,7 @@ class TestMainCLI:
             assert params['learning_rate'] == 1e-5
             assert params['use_liger_kernels'] is True
             assert params['osft'] is True
+            assert params['osft_rank_ratio'] == 0.5
     
     @patch('mini_trainer.train.init_distributed_environment')
     @patch('mini_trainer.train.dist.get_rank', return_value=1)

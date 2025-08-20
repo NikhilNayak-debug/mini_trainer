@@ -501,19 +501,19 @@ def get_model_patterns(model_name_or_class):
     return _get_model_patterns_from_name(class_name)
 
 
-def get_model_config(model_name_or_class=None, custom_patterns=None):
+def get_model_config(model_name_or_class=None, target_patterns=None):
     """
     Get SVD target patterns for a model.
     
     Args:
         model_name_or_class: Model name/class to get predefined patterns for, or None
-        custom_patterns: Custom list of patterns to use instead of predefined ones
+        target_patterns: Custom list of patterns to use instead of predefined ones
         
     Returns:
         List of patterns to match against parameter names
     """
-    if custom_patterns is not None:
-        return custom_patterns
+    if target_patterns is not None:
+        return target_patterns
         
     if model_name_or_class is None:
         return MODEL_CONFIGS["default"]["patterns"]
@@ -522,7 +522,7 @@ def get_model_config(model_name_or_class=None, custom_patterns=None):
 
 
 def auto_generate_target_svd_config(
-    model, model_name_or_class=None, custom_patterns=None, rank_ratio=0.5
+    model, model_name_or_class=None, target_patterns=None, rank_ratio=0.5
 ) -> dict[str, int]:
     """
     Automatically selects which weight matrices to decompose using SVD and determines their top-k values.
@@ -530,13 +530,13 @@ def auto_generate_target_svd_config(
     Args:
         model: The model to analyze
         model_name_or_class: Model name/class to get predefined patterns for, or None for auto-detection
-        custom_patterns: Custom list of patterns to use instead of predefined ones
+        target_patterns: Custom list of patterns to use instead of predefined ones
         rank_ratio: Ratio of the smaller dimension to use for top-k rank (default: 0.5)
         
     Returns:
         Dictionary mapping parameter names to their top-k values
     """
-    target_patterns = get_model_config(model_name_or_class, custom_patterns)
+    target_patterns = get_model_config(model_name_or_class, target_patterns)
     
     config = {}
     for name, param in model.named_parameters():
@@ -602,7 +602,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
             *model_args,
             svd_config: dict[str, int] | None = None,
             model_name_or_class=None,
-            custom_patterns=None,
+            target_patterns=None,
             rank_ratio=0.5,
             **kwargs
         ) -> type[SVDModel]:
@@ -631,7 +631,7 @@ def create_svd_model_class(base_cls) -> type[SVDModel]:
                 svd_config = auto_generate_target_svd_config(
                     model, 
                     model_name_or_class=model_name_or_class,
-                    custom_patterns=custom_patterns,
+                    target_patterns=target_patterns,
                     rank_ratio=rank_ratio
                 )
 

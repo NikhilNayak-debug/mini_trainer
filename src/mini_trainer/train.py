@@ -357,7 +357,17 @@ def main(
     lr_scheduler_kwargs: Annotated[str, Option(help="JSON string of scheduler-specific kwargs")] = "{}",
     seed: Annotated[int, Option(help="Random seed for reproducibility")] = 67,
     use_liger_kernels: Annotated[bool, Option(help="Whether to use Liger kernels")] = False,
+
+    # todo: currently 0.75 rank ratio means unfreezing 25% of the singular values. We want to change this into a variable for which 0 indicates no fine-tuning, and 100% means full fine-tuning
     osft: Annotated[bool, Option(help="Enable SVD based orthogonal subspace training")] = False,
+    osft_rank_ratio: Annotated[float, Option(help="Ratio of ranks to use for SVD. Required when osft is True")] = None,  
+    osft_target_patterns: Annotated[str, Option(
+        help=("List of target modules to use for SVD. When not provided, it will try to guess the patterns based on the model. "
+              "This should be a comma-separated list of patterns. "
+              "For example, 'self_attn.q_proj,self_attn.k_proj,mlp.gate_proj'")
+    )] = None,
+
+
     output_dir: Annotated[str, Option(help="Directory to save checkpoints and logs (required)")] = ...,
     logging_level: Annotated[LogLevelEnum, Option(help="Logging level", case_sensitive=False)] = LogLevelEnum.INFO,
     min_samples_per_checkpoint: Annotated[int | None, Option(help="Minimum number of samples processed before saving a checkpoint (required)")] = None,
@@ -370,9 +380,21 @@ def main(
     checkpoint_at_epoch: Annotated[bool, Option(help="Whether to save checkpoints at the end of each epoch")] = False,
     save_final_checkpoint: Annotated[bool, Option(help="Whether to save a final checkpoint when training ends")] = False,
 ):
+    
+    
     init_distributed_environment()
+    # TODO: make the path creation lazy, but confirm that we can write to the given directory
+    # at this point
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+
+    # validation, do this before continuing execution flow so we don't log experiments that are invalid from
+    # the get-go
+    if osft:
+        if osft_rank_ratio is None:
+            raise ValueError("osft_rank_ratio is required when osft is True")
+        if osft_target_patterns:
+            osft_target_patterns = osft_target_patterns.replace("'", "").replace('"', "").replace(" ", "").split(",")
     
     # Log parameters only on rank 0
     rank = dist.get_rank()
@@ -388,6 +410,8 @@ def main(
             "seed": seed,
             "use_liger_kernels": use_liger_kernels,
             "osft": osft,
+            "osft_rank_ratio": osft_rank_ratio,
+            "osft_target_patterns": osft_target_patterns,
             "output_dir": output_dir,
             "logging_level": logging_level.value,
             "min_samples_per_checkpoint": min_samples_per_checkpoint,
@@ -443,6 +467,8 @@ def main(
         use_liger_kernels=use_liger_kernels,
         osft=osft,
         rank=rank,
+        osft_rank_ratio=osft_rank_ratio,
+        osft_target_patterns=osft_target_patterns,
     )
     model, optimizer, lr_scheduler = setup_training_components(
         model=model,

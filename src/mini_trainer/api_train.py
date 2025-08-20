@@ -120,7 +120,12 @@ def run_training(torch_args: TorchrunArgs, train_args: TrainingArgs) -> None:
         command.append("--use-liger-kernels")
     
     if train_args.osft:
+        if train_args.osft_rank_ratio is None:
+            raise ValueError("osft_rank_ratio is required when osft is True")
         command.append("--osft")
+        command.append(f"--osft-rank-ratio={train_args.osft_rank_ratio}")
+        if train_args.osft_target_patterns:
+            command.append(f"--osft-target-patterns={','.join(train_args.osft_target_patterns)}")
     
     if train_args.checkpoint_at_epoch:
         command.append("--checkpoint-at-epoch")

@@ -374,6 +374,7 @@ class TestRunTraining:
                 output_dir=tmpdir,
                 use_liger_kernels=True,
                 osft=True,
+                osft_rank_ratio=0.5,
                 min_samples_per_checkpoint=5000
             )
  
@@ -410,9 +411,71 @@ class TestRunTraining:
             assert "--min-samples-per-checkpoint=5000" in command
             assert "--use-liger-kernels" in command
             assert "--osft" in command
+            assert "--osft-rank-ratio=0.5" in command
             
             # Verify listen was called
             mock_popen.listen.assert_called_once()
+
+    @patch('mini_trainer.api_train.StreamablePopen')
+    def test_run_training_osft_scenarios(self, mock_popen_class):
+        """Test OSFT parameter validation scenarios."""
+        mock_popen = MagicMock()
+        mock_popen.poll.return_value = 0  # Success
+        mock_popen_class.return_value = mock_popen
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_torch_args = TorchrunArgs()
+            
+            # Scenario 1: osft is not provided, this should succeed
+            train_args_no_osft = TrainingArgs(
+                model_name_or_path="my-model",
+                data_path="/data/train.jsonl",
+                output_dir=tmpdir,
+                osft=False  # Default case
+            )
+            
+            run_training(base_torch_args, train_args_no_osft)
+            
+            # Verify command was constructed without osft flags
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            assert "--osft" not in command
+            assert "--osft-rank-ratio" not in " ".join(command)
+            
+            # Reset mock for next test
+            mock_popen_class.reset_mock()
+            
+            # Scenario 2: osft is passed but not rank ratio, this should fail
+            train_args_osft_no_ratio = TrainingArgs(
+                model_name_or_path="my-model",
+                data_path="/data/train.jsonl",
+                output_dir=tmpdir,
+                osft=True,
+                osft_rank_ratio=None  # Missing required parameter
+            )
+            
+            with pytest.raises(ValueError, match="osft_rank_ratio is required when osft is True"):
+                run_training(base_torch_args, train_args_osft_no_ratio)
+            
+            # Verify StreamablePopen was not called due to validation failure
+            assert not mock_popen_class.called
+            
+            # Scenario 3: osft is passed with rank ratio, this should succeed
+            train_args_osft_with_ratio = TrainingArgs(
+                model_name_or_path="my-model",
+                data_path="/data/train.jsonl",
+                output_dir=tmpdir,
+                osft=True,
+                osft_rank_ratio=0.3
+            )
+            
+            run_training(base_torch_args, train_args_osft_with_ratio)
+            
+            # Verify command includes both osft flags
+            call_args = mock_popen_class.call_args
+            _, command = call_args[0]
+            assert "--osft" in command
+            assert "--osft-rank-ratio=0.3" in command
     
     @patch('mini_trainer.api_train.StreamablePopen')
     def test_run_training_keyboard_interrupt(self, mock_popen_class):
@@ -642,9 +705,11 @@ sys.exit(1)
             train_args = TrainingArgs(
                 output_dir=tmpdir,
                 use_liger_kernels=True,
-                osft=True,
                 checkpoint_at_epoch=True,
-                save_final_checkpoint=True
+                save_final_checkpoint=True,
+                # OSFT requires rank ratio
+                osft=True,
+                osft_rank_ratio=0.5
             )
             
             with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
