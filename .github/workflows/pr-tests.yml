@@ -37,7 +37,7 @@ jobs:
     
     - name: Run Python 3.12 non-GPU tests
       run: |
-        uv run tox -e test-non-gpu-py312
+        uv run tox -e py312-nogpu-cov
 
   test-py311:
     name: Python 3.11 Tests
@@ -71,7 +71,9 @@ jobs:
     
     - name: Run Python 3.11 non-GPU tests
       run: |
-        uv run tox -e test-non-gpu-py311
+        # we will still be able to print out the coverage in this run, it just 
+        # won't be able to upload it to codecov
+        uv run tox -e py311-nogpu-cov
 
   test-coverage:
     name: Test with Coverage
@@ -105,23 +107,15 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        uv run tox -e test-non-gpu-coverage
+        uv run tox -e py312-nogpu-cov
     
-    - name: Upload HTML coverage report
-      uses: actions/upload-artifact@v4
-      if: always()
+    - name: Upload coverage results to Codecov
+      uses: codecov/codecov-action@v5
       with:
-        name: coverage-html-report
-        path: htmlcov/
-        retention-days: 30
-    
-    - name: Upload coverage XML report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: coverage-xml-report
-        path: coverage.xml
-        retention-days: 30
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: Red-Hat-AI-Innovation-Team/mini_trainer
+        fail_ci_if_error: true
+        verbose: true
 
   format-check:
     name: Format Check (Non-blocking)
