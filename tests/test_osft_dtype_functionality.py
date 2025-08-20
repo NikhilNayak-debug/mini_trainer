@@ -260,7 +260,7 @@ class TestOSFTModelDtypeIntegration:
             rank=0,
             upcast_dtype=torch.float32,
             output_dtype=torch.bfloat16,
-            osft_rank_ratio=0.5
+            osft_unfreeze_rank_ratio=0.5
         )
         
         # Verify the attributes were set correctly on the returned model
@@ -315,7 +315,7 @@ class TestOSFTParameterFlow:
                     learning_rate=1e-5,
                     output_dir=tmpdir,
                     osft=True,
-                    osft_rank_ratio=0.5,
+                    osft_unfreeze_rank_ratio=0.5,
                     osft_upcast_dtype="bfloat16",
                     osft_output_dtype="float16",
                 )

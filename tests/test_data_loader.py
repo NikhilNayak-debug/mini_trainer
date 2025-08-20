@@ -712,6 +712,100 @@ class TestEpochTracking:
         assert count == length  # Should iterate exactly one epoch
     
     
+
+class TestDataLoaderBatchCount:
+    """Test suite for counting batches in data loader."""
+    
+    @pytest.fixture
+    def create_test_data(self):
+        """Create temporary test data file."""
+        def _create(num_samples=10):
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+                for i in range(num_samples):
+                    # Create varying length sequences to test token counting
+                    seq_length = 10 + (i % 5) * 5  # Lengths: 10, 15, 20, 25, 30
+                    # Create realistic token IDs and labels
+                    input_ids = list(range(100, 100 + seq_length))
+                    # Make some labels -100 (ignored in loss)
+                    labels = [lid if j > 2 else -100 for j, lid in enumerate(input_ids)]
+                    num_loss_counted = sum(1 for l in labels if l != -100)
+                    
+                    sample = {
+                        "input_ids": input_ids,
+                        "labels": labels,
+                        "len": seq_length,
+                        "num_loss_counted_tokens": num_loss_counted
+                    }
+                    f.write(json.dumps(sample) + '\n')
+                return f.name
+        return _create
+    
+    @patch('torch.distributed.is_initialized', return_value=False)
+    @patch('torch.distributed.get_rank', return_value=0)
+    @patch('torch.distributed.get_world_size', return_value=1)
+    def test_count_batches_finite_sampler(self, mock_world_size, mock_rank, mock_is_init, create_test_data):
+        """Test counting batches with finite sampler."""
+        data_path = create_test_data(num_samples=20)
+        
+        try:
+            # Create data loader with finite sampler
+            data_loader = get_data_loader(
+                data_path=data_path,
+                batch_size=4,
+                max_tokens_per_gpu=1000,
+                seed=42
+            )
+            
+            # Count batches by iterating through the data loader
+            batch_count = 0
+            for batch in data_loader:
+                batch_count += 1
+            
+            # With 20 samples and batch size 4, we expect 5 batches
+            # Note: actual batching may vary due to dynamic batching based on tokens
+            assert batch_count > 0, "Should have at least one batch"
+            
+            # Alternative method: use len() if available
+            if hasattr(data_loader, '__len__'):
+                length_from_len = len(data_loader)
+                assert length_from_len > 0, "Data loader length should be positive"
+        
+        finally:
+            os.unlink(data_path)
+    
+    @patch('torch.distributed.is_initialized', return_value=False)
+    @patch('torch.distributed.get_rank', return_value=0)
+    @patch('torch.distributed.get_world_size', return_value=1)
+    def test_count_batches_with_epoch(self, mock_world_size, mock_rank, mock_is_init, create_test_data):
+        """Test that batch count is consistent across epochs."""
+        data_path = create_test_data(num_samples=10)
+        
+        try:
+            data_loader = get_data_loader(
+                data_path=data_path,
+                batch_size=2,
+                max_tokens_per_gpu=1000,
+                seed=42
+            )
+            
+            # Count batches for multiple epochs
+            epoch_batch_counts = []
+            for epoch in range(3):
+                data_loader.sampler.set_epoch(epoch)
+                batch_count = 0
+                for batch in data_loader:
+                    batch_count += 1
+                epoch_batch_counts.append(batch_count)
+                
+                # check that the dataloader actually increments epoch internally
+                assert data_loader.sampler.epoch == epoch, f"internal epoch state doesn't match what we expected"
+            
+            # All epochs should have the same number of batches
+            assert len(set(epoch_batch_counts)) == 1, f"Batch counts vary across epochs: {epoch_batch_counts}"
+            assert epoch_batch_counts[0] > 0, "Should have at least one batch per epoch"
+        
+        finally:
+            os.unlink(data_path)
     
 
 if __name__ == "__main__":

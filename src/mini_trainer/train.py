@@ -424,9 +424,8 @@ def main(
     seed: Annotated[int, Option(help="Random seed for reproducibility")] = 67,
     use_liger_kernels: Annotated[bool, Option(help="Whether to use Liger kernels")] = False,
 
-    # todo: currently 0.75 rank ratio means unfreezing 25% of the singular values. We want to change this into a variable for which 0 indicates no fine-tuning, and 100% means full fine-tuning
     osft: Annotated[bool, Option(help="Enable OSFT (Orthogonal Subspace Fine-Tuning)")] = False,
-    osft_rank_ratio: Annotated[float, Option(help="Ratio of ranks to use for OSFT. Required when osft is True")] = None,  
+    osft_unfreeze_rank_ratio: Annotated[float, Option(help="Ratio of ranks to unfreeze for OSFT (0.0 = freeze all, 1.0 = unfreeze all). Required when osft is True")] = None,  
     osft_target_patterns: Annotated[str, Option(
         help=("List of target modules to use for OSFT. When not provided, it will try to guess the patterns based on the model. "
               "This should be a comma-separated list of patterns. "
@@ -458,8 +457,8 @@ def main(
     # validation, do this before continuing execution flow so we don't log experiments that are invalid from
     # the get-go
     if osft:
-        if osft_rank_ratio is None:
-            raise ValueError("osft_rank_ratio is required when osft is True")
+        if osft_unfreeze_rank_ratio is None:
+            raise ValueError("osft_unfreeze_rank_ratio is required when osft is True")
         if osft_target_patterns:
             osft_target_patterns = osft_target_patterns.replace("'", "").replace('"', "").replace(" ", "").split(",")
     
@@ -481,7 +480,7 @@ def main(
             "seed": seed,
             "use_liger_kernels": use_liger_kernels,
             "osft": osft,
-            "osft_rank_ratio": osft_rank_ratio,
+            "osft_unfreeze_rank_ratio": osft_unfreeze_rank_ratio,
             "osft_target_patterns": osft_target_patterns,
             "osft_upcast_dtype": osft_upcast_dtype,
             "osft_output_dtype": osft_output_dtype,
@@ -534,6 +533,8 @@ def main(
     log_rank_0(f"Calculated num_training_steps: {num_training_steps}")
     
     # If Orthogonal Subspace Learning is enabled, loads a model with decomposed trainable low-rank + fixed high-rank subspace weights (see osft_utils)
+    # Convert user-facing osft_unfreeze_rank_ratio to internal osft_rank_ratio
+    osft_rank_ratio = None if osft_unfreeze_rank_ratio is None else (1.0 - osft_unfreeze_rank_ratio)
     model = setup_model(
         model_name_or_path=model_name_or_path,
         use_liger_kernels=use_liger_kernels,

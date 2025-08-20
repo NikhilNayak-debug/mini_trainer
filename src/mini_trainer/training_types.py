@@ -48,7 +48,7 @@ class TrainingArgs:
     # Model configuration
     use_liger_kernels: bool = False
     osft: bool = False
-    osft_rank_ratio: float | None = None
+    osft_unfreeze_rank_ratio: float | None = None
     osft_target_patterns: list[str] | None = None
     osft_upcast_dtype: str | None = "float32"
     osft_output_dtype: str | None = None

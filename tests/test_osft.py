@@ -2,7 +2,7 @@
 Comprehensive tests for OSFT (Orthogonal Subspace Fine-Tuning) and SVD functionality.
 
 Tests validate:
-1. osft_rank_ratio validation in API
+1. osft_unfreeze_rank_ratio validation in API
 2. osft_target_patterns passing through API
 3. SVD config generation with custom patterns
 4. Integration with setup_model
@@ -34,10 +34,10 @@ class TestOSFTAPIValidation:
     """Test OSFT parameter validation in the API."""
     @patch('mini_trainer.api_train.StreamablePopen')
     def test_osft_requires_rank_ratio(self, mock_popen_class):
-        """Test that osft=True requires osft_rank_ratio to be provided."""
+        """Test that osft=True requires osft_unfreeze_rank_ratio to be provided."""
         with tempfile.TemporaryDirectory() as tmpdir:
             torch_args = TorchrunArgs(nproc_per_node=8)
-            # osft=True but osft_rank_ratio=None should raise error
+            # osft=True but osft_unfreeze_rank_ratio=None should raise error
             train_args = TrainingArgs(
                 model_name_or_path="test-model",
                 data_path="test.jsonl",
@@ -46,7 +46,7 @@ class TestOSFTAPIValidation:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=None  # This should cause an error
+                osft_unfreeze_rank_ratio=None  # This should cause an error
             )
             
             mock_popen = MagicMock()
@@ -54,7 +54,7 @@ class TestOSFTAPIValidation:
             mock_popen.poll.return_value = 0
             mock_popen_class.return_value = mock_popen
             
-            with pytest.raises(ValueError, match="osft_rank_ratio is required when osft is True"):
+            with pytest.raises(ValueError, match="osft_unfreeze_rank_ratio is required when osft is True"):
                 run_training(torch_args, train_args)
             
             # shouldnt have even gotten run
@@ -63,7 +63,7 @@ class TestOSFTAPIValidation:
     
     @patch('mini_trainer.api_train.StreamablePopen')
     def test_osft_with_valid_rank_ratio(self, mock_popen_class):
-        """Test that osft=True with valid rank_ratio passes validation."""
+        """Test that osft=True with valid unfreeze_rank_ratio passes validation."""
         with tempfile.TemporaryDirectory() as tmpdir:
             torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
@@ -74,7 +74,7 @@ class TestOSFTAPIValidation:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.5  # Valid ratio
+                osft_unfreeze_rank_ratio=0.5  # Valid ratio
             )
             
             mock_popen = MagicMock()
@@ -88,11 +88,11 @@ class TestOSFTAPIValidation:
             _, command = call_args[0]
             
             assert "--osft" in command
-            assert "--osft-rank-ratio=0.5" in command
+            assert "--osft-unfreeze-rank-ratio=0.5" in command
             assert mock_popen_class.call_count > 0
     
-    def test_osft_rank_ratio_not_required_when_osft_false(self):
-        """Test that osft_rank_ratio is not required when osft=False."""
+    def test_osft_unfreeze_rank_ratio_not_required_when_osft_false(self):
+        """Test that osft_unfreeze_rank_ratio is not required when osft=False."""
         with tempfile.TemporaryDirectory() as tmpdir:
             torch_args = TorchrunArgs(nproc_per_node=8)
             train_args = TrainingArgs(
@@ -103,7 +103,7 @@ class TestOSFTAPIValidation:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=False,
-                osft_rank_ratio=None  # This should be fine
+                osft_unfreeze_rank_ratio=None  # This should be fine
             )
             
             with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
@@ -119,7 +119,7 @@ class TestOSFTAPIValidation:
                 _, command = call_args[0]
                 
                 assert "--osft" not in command
-                assert all(not arg.startswith("--osft-rank-ratio") for arg in command)
+                assert all(not arg.startswith("--osft-unfreeze-rank-ratio") for arg in command)
                 assert mock_popen_class.call_count > 0
     
     @patch('mini_trainer.api_train.StreamablePopen')
@@ -136,7 +136,7 @@ class TestOSFTAPIValidation:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.75,
+                osft_unfreeze_rank_ratio=0.75,
                 osft_target_patterns=test_patterns
             )
             
@@ -151,7 +151,7 @@ class TestOSFTAPIValidation:
             _, command = call_args[0]
             
             assert "--osft" in command
-            assert "--osft-rank-ratio=0.75" in command
+            assert "--osft-unfreeze-rank-ratio=0.75" in command
             # Find the target patterns argument
             patterns_arg = None
             for arg in command:
@@ -176,7 +176,7 @@ class TestOSFTAPIValidation:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.5,
+                osft_unfreeze_rank_ratio=0.5,
                 osft_target_patterns=[]  # Empty list
             )
             
@@ -213,7 +213,7 @@ class TestOSFTAPIValidation:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.5,
+                osft_unfreeze_rank_ratio=0.5,
                 osft_target_patterns=None  # None should not be passed
             )
             
@@ -245,7 +245,7 @@ class TestOSFTAPIValidation:
                     learning_rate=1e-5,
                     output_dir=tmpdir,
                     osft=True,
-                    osft_rank_ratio=ratio
+                    osft_unfreeze_rank_ratio=ratio
                 )
                 
                 mock_popen = MagicMock()
@@ -257,7 +257,7 @@ class TestOSFTAPIValidation:
                 call_args = mock_popen_class.call_args
                 _, command = call_args[0]
                 
-                assert f"--osft-rank-ratio={ratio}" in command
+                assert f"--osft-unfreeze-rank-ratio={ratio}" in command
 
 
 class TestOSFTConfigGeneration:
@@ -523,12 +523,12 @@ app = typer.Typer()
 @app.command()
 def main(
     osft: bool = False,
-    osft_rank_ratio: Optional[float] = None,
+    osft_unfreeze_rank_ratio: Optional[float] = None,
     osft_target_patterns: Optional[str] = None
 ):
-    # Validate: if osft is True, rank_ratio must be provided
-    if osft and osft_rank_ratio is None:
-        print("ERROR: osft_rank_ratio required")
+    # Validate: if osft is True, unfreeze_rank_ratio must be provided
+    if osft and osft_unfreeze_rank_ratio is None:
+        print("ERROR: osft_unfreeze_rank_ratio required")
         raise typer.Exit(1)
 
     # Parse target patterns if provided (comma-delimited)
@@ -536,7 +536,7 @@ def main(
         patterns = [p.strip() for p in osft_target_patterns.split(",")]
         print(f"PATTERNS: {patterns}")
 
-    print(f"SUCCESS: osft={osft}, ratio={osft_rank_ratio}")
+    print(f"SUCCESS: osft={osft}, ratio={osft_unfreeze_rank_ratio}")
 
 if __name__ == "__main__":
     app()
@@ -544,7 +544,7 @@ if __name__ == "__main__":
             
             # Test valid OSFT configuration
             result = subprocess.run(
-                ["python", str(test_script), "--osft", "--osft-rank-ratio=0.5", 
+                ["python", str(test_script), "--osft", "--osft-unfreeze-rank-ratio=0.5", 
                  "--osft-target-patterns=q_proj,k_proj"],
                 capture_output=True,
                 text=True
@@ -553,14 +553,14 @@ if __name__ == "__main__":
             assert "SUCCESS" in result.stdout
             assert "PATTERNS: ['q_proj', 'k_proj']" in result.stdout
             
-            # Test missing rank_ratio
+            # Test missing unfreeze_rank_ratio
             result = subprocess.run(
                 ["python", str(test_script), "--osft"],
                 capture_output=True,
                 text=True
             )
             assert result.returncode == 1
-            assert "ERROR: osft_rank_ratio required" in result.stdout
+            assert "ERROR: osft_unfreeze_rank_ratio required" in result.stdout
             
             # Test osft=False doesn't require rank_ratio
             result = subprocess.run(

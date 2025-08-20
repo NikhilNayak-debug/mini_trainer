@@ -109,6 +109,8 @@ def setup_model(
         "pretrained_model_name_or_path": kwargs['model_name_or_path'],
     }
     # Check if flash_attn is available, otherwise use eager
+    # This is mainly so we can easily test without having CUDA configured,
+    # in practice we will need flash attention when running this repo
     try:
         import flash_attn
         base_model_args["attn_implementation"] = "flash_attention_2"

@@ -120,7 +120,7 @@ mini_trainer also supports a novel technique for continual learning known as **O
 
 This method allows you to target the pieces of your language model which are least likely to contain valuable task-specific information. 
 
-To run this method with `mini_trainer`, simply pass the `--osft` flag to enable the technique, and pass the `--osft-rank-ratio` parameter to specify how much of the model's most important pieces you would like to remain frozen:
+To run this method with `mini_trainer`, simply pass the `--osft` flag to enable the technique, and pass the `--osft-unfreeze-rank-ratio` parameter to specify how much of the model's most important pieces you would like to remain frozen (where a value of 0.0 means everything is frozen, and 1.0 means we train all of the singular values).
 
 ```bash
 torchrun --nnodes=1 --nproc-per-node=8 train.py \
@@ -135,7 +135,7 @@ torchrun --nnodes=1 --nproc-per-node=8 train.py \
         --seed 893 \
         --learning-rate 6e-6 \
         --osft \
-        --osft-rank-ratio 0.25  # preserves the best 25% of original model
+        --osft-unfreeze-rank-ratio 0.25  # trains the 25% of the model which give the least amount of information
 
 ```
 

@@ -388,7 +388,7 @@ class TestRunTraining:
                 output_dir=tmpdir,
                 use_liger_kernels=True,
                 osft=True,
-                osft_rank_ratio=0.5,
+                osft_unfreeze_rank_ratio=0.5,
                 min_samples_per_checkpoint=5000
             )
  
@@ -425,7 +425,7 @@ class TestRunTraining:
             assert "--min-samples-per-checkpoint=5000" in command
             assert "--use-liger-kernels" in command
             assert "--osft" in command
-            assert "--osft-rank-ratio=0.5" in command
+            assert "--osft-unfreeze-rank-ratio=0.5" in command
             
             # Verify listen was called
             mock_popen.listen.assert_called_once()
@@ -457,12 +457,12 @@ class TestRunTraining:
             call_args = mock_popen_class.call_args
             _, command = call_args[0]
             assert "--osft" not in command
-            assert "--osft-rank-ratio" not in " ".join(command)
+            assert "--osft-unfreeze-rank-ratio" not in " ".join(command)
             
             # Reset mock for next test
             mock_popen_class.reset_mock()
             
-            # Scenario 2: osft is passed but not rank ratio, this should fail
+            # Scenario 2: osft is passed but not unfreeze rank ratio, this should fail
             train_args_osft_no_ratio = TrainingArgs(
                 model_name_or_path="my-model",
                 data_path="/data/train.jsonl",
@@ -471,16 +471,16 @@ class TestRunTraining:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=None  # Missing required parameter
+                osft_unfreeze_rank_ratio=None  # Missing required parameter
             )
             
-            with pytest.raises(ValueError, match="osft_rank_ratio is required when osft is True"):
+            with pytest.raises(ValueError, match="osft_unfreeze_rank_ratio is required when osft is True"):
                 run_training(base_torch_args, train_args_osft_no_ratio)
             
             # Verify StreamablePopen was not called due to validation failure
             assert not mock_popen_class.called
             
-            # Scenario 3: osft is passed with rank ratio, this should succeed
+            # Scenario 3: osft is passed with unfreeze rank ratio, this should succeed
             train_args_osft_with_ratio = TrainingArgs(
                 model_name_or_path="my-model",
                 data_path="/data/train.jsonl",
@@ -489,7 +489,7 @@ class TestRunTraining:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.3
+                osft_unfreeze_rank_ratio=0.3
             )
             
             run_training(base_torch_args, train_args_osft_with_ratio)
@@ -498,7 +498,7 @@ class TestRunTraining:
             call_args = mock_popen_class.call_args
             _, command = call_args[0]
             assert "--osft" in command
-            assert "--osft-rank-ratio=0.3" in command
+            assert "--osft-unfreeze-rank-ratio=0.3" in command
     
     @patch('mini_trainer.api_train.StreamablePopen')
     def test_run_training_keyboard_interrupt(self, mock_popen_class):
@@ -748,7 +748,7 @@ sys.exit(1)
                 save_final_checkpoint=True,
                 # OSFT requires rank ratio
                 osft=True,
-                osft_rank_ratio=0.5
+                osft_unfreeze_rank_ratio=0.5
             )
             
             with patch('mini_trainer.api_train.StreamablePopen') as mock_popen_class:
@@ -898,7 +898,7 @@ class TestOSFTDtypeParameters:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.5,
+                osft_unfreeze_rank_ratio=0.5,
                 # Use defaults: osft_upcast_dtype="float32", osft_output_dtype=None
             )
 
@@ -929,7 +929,7 @@ class TestOSFTDtypeParameters:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.5,
+                osft_unfreeze_rank_ratio=0.5,
                 osft_upcast_dtype="bfloat16",
                 osft_output_dtype="float16"
             )
@@ -959,7 +959,7 @@ class TestOSFTDtypeParameters:
                 learning_rate=1e-5,
                 output_dir=tmpdir,
                 osft=True,
-                osft_rank_ratio=0.5,
+                osft_unfreeze_rank_ratio=0.5,
                 osft_upcast_dtype=None,
                 osft_output_dtype=None
             )
