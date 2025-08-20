@@ -45,7 +45,7 @@ def install_flash_attn(strict=False):
     # Check if torch is installed
     if not is_package_installed("torch"):
         print("❌ PyTorch must be installed first")
-        print("   In tox: Add 'torch>=2.6,<2.8' to deps section")
+        print("   In tox: Add 'torch>=2.6' to deps section")
         print("   In uv: Run 'uv sync'")
         return False if strict else True
     

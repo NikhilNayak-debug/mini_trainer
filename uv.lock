@@ -636,7 +636,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'test'" },
     { name = "rich" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "torch", specifier = ">=2.6,<2.8" },
+    { name = "torch", specifier = ">=2.6" },
     { name = "tox" },
     { name = "tox-uv" },
     { name = "transformers" },

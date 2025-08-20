@@ -32,37 +32,49 @@ class TorchrunArgs:
 class TrainingArgs:
     """Complete training configuration arguments."""
     # Required fields (no defaults)
-    model_name_or_path: str
-    data_path: str
-    batch_size: int
-    max_tokens_per_gpu: int
-    learning_rate: float
-    output_dir: str
+    model_name_or_path: str = field(metadata={"help": "The name or path of the model to train."})
+    data_path: str = field(metadata={"help": "The path to the training data."})
+    batch_size: int = field(metadata={"help": "The batch size to use for training."})
+    max_tokens_per_gpu: int = field(metadata={"help": "The maximum number of tokens per GPU per minibatch."})
+    learning_rate: float = field(metadata={"help": "The learning rate to use for training."})
+    output_dir: str = field(metadata={"help": "Directory to save checkpoints and logs."})
     
     # Optional fields (with defaults)
-    num_warmup_steps: int = 0
-    lr_scheduler: str = "constant_with_warmup"
-    lr_scheduler_kwargs: Optional[Dict[str, Any]] = field(default_factory=dict)
-    seed: int = 42
+    num_warmup_steps: int = field(default=0, metadata={"help": "The number of warmup steps for the learning rate scheduler."})
+    lr_scheduler: str = field(
+        default="cosine",
+        metadata={"help": "The learning rate scheduler to use. NOTE: Infinite mode only supports schedulers which do not read the number of training steps."},
+    )
+    lr_scheduler_kwargs: Optional[Dict[str, Any]] = field(default_factory=dict, metadata={"help": "Additional keyword arguments for the learning rate scheduler."})
+    seed: int = field(default=42, metadata={"help": "The random seed to use for training."})
     
     # Model configuration
-    use_liger_kernels: bool = False
-    osft: bool = False
-    osft_unfreeze_rank_ratio: float | None = None
-    osft_target_patterns: list[str] | None = None
-    osft_upcast_dtype: str | None = "float32"
-    osft_output_dtype: str | None = None
+    use_liger_kernels: bool = field(default=False, metadata={"help": "Whether to use Liger kernels."})
+    osft: bool = field(default=False, metadata={"help": "Whether to use OSFT (Orthogonal Subspace Fine-Tuning). If enabled, you must also specify the `osft_unfreeze_rank_ratio`."})
+    osft_unfreeze_rank_ratio: float | None = field(default=None, metadata={"help": "The ratio of ranks that will be unfrozen in each weight matrix during OSFT. 0.0 means the entire matrix is frozen, 0.2 means the 20% smallest singular values will be unfrozen, and 1.0 means the entire matrix is unfrozen."})
+    osft_target_patterns: list[str] | None = field(default=None, metadata={
+        "help": "A list of patterns to match against the model's parameter names to target for OSFT. By default, we try to resolve the configuration which best suits your model.",
+    })
     
     # Output options
-    min_samples_per_checkpoint: Optional[int] = None
+    min_samples_per_checkpoint: Optional[int] = field(default=None, metadata={"help": "If provided, this must be the number of samples to process before saving a checkpoint."})
     
     # Training mode and stopping criteria
-    training_mode: TrainingMode = TrainingMode.EPOCH
+    training_mode: TrainingMode = field(default=TrainingMode.EPOCH, metadata={
+        "help": (
+            "The training mode to use.\n"
+            "EPOCH: Train for a fixed number of epochs.\n"
+            "STEP: Train for a fixed number of steps.\n"
+            "TOKEN: Train for a fixed number of tokens.\n"
+            "INFINITE: Train indefinitely until the user stops the process.\n"
+            "NOTE: Infinite mode only supports schedulers which do not read the number of training steps.\n"
+        )}
+    )
     max_epochs: int = 1  # For EPOCH mode
     max_steps: int = 0   # For STEP mode  
     max_tokens: int = 0  # For TOKEN mode
     
     # Checkpointing
-    checkpoint_at_epoch: bool = False
-    save_final_checkpoint: bool = True
+    checkpoint_at_epoch: bool = field(default=False, metadata={"help": "Whether to checkpoint at the end of each epoch."})
+    save_final_checkpoint: bool = field(default=True, metadata={"help": "Whether the model should be saved at the end of training or not. Off by default to avoid accidentally overwriting the best checkpoint."})
 
