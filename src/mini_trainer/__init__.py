@@ -4,7 +4,13 @@ This package provides reference implementations of emerging training algorithms,
 including Orthogonal Subspace Fine Tuning (OSFT).
 """
 
-__version__ = "0.1.0"
+# Dynamic version from setuptools_scm
+try:
+    from ._version import __version__
+except ImportError:
+    # Fallback for development installations
+    __version__ = "unknown"
+
 
 from . import api_train
 from . import async_structured_logger
