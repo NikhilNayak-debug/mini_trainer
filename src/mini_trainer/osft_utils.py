@@ -10,8 +10,10 @@ from tqdm import tqdm
 
 from mini_trainer.utils import log_rank_0, check_distributed_is_synchronized
 
+import os
+
 # Memory optimization constants
-OSFT_CACHE_CLEAR_INTERVAL = 5  # Clear GPU cache every N parameters during matrix reconstruction
+OSFT_CACHE_CLEAR_INTERVAL = os.getenv('OSFT_CACHE_CLEAR_INTERVAL', 5)  # Clear GPU cache every N parameters during matrix reconstruction
 
 class SVDDictBase(t.TypedDict):
     U_high: torch.Tensor
