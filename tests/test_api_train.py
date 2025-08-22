@@ -101,6 +101,7 @@ class TestDataclasses:
 
 class TestStreamablePopen:
     """Test the StreamablePopen wrapper."""
+    buffer_time = 1.0 # seconds
     
     def test_streamable_popen_success(self):
         """Test StreamablePopen with successful command."""
@@ -205,9 +206,9 @@ class TestStreamablePopen:
             command = ["python", "-c", 
                       "import time, sys; "
                       "print('1', flush=True); "
-                      "time.sleep(0.5); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('2', flush=True); "
-                      "time.sleep(0.5); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('3', flush=True)"]
             
             popen = StreamablePopen(str(log_file), command)
@@ -217,28 +218,31 @@ class TestStreamablePopen:
             listen_thread.start()
             
             # Check that "1" appears first
-            time.sleep(0.2)  # Give it time to start and print "1"
+            time.sleep(self.buffer_time)  # Increased delay for CI environments to start subprocess
             with open(log_file) as f:
                 content = f.read()
-                assert "1" in content
+                print(f"DEBUG: After {self.buffer_time}s, file content: {repr(content)}")
+                assert "1" in content, f"Expected '1' in content but got: {repr(content)}"
                 assert "2" not in content
                 assert "3" not in content
             
             # Check that "2" appears next
-            time.sleep(0.5)  # Wait for "2" to be printed
+            time.sleep(self.buffer_time)  # Wait for "2" to be printed
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG: After {self.buffer_time *2}s, file content: {repr(content)}")
                 assert "1" in content
-                assert "2" in content
+                assert "2" in content, f"Expected '2' in content but got: {repr(content)}"
                 assert "3" not in content
             
             # Check that "3" appears last
-            time.sleep(0.5)  # Wait for "3" to be printed
+            time.sleep(self.buffer_time)  # Wait for "3" to be printed
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG: After {self.buffer_time * 3}s, file content: {repr(content)}")
                 assert "1" in content
                 assert "2" in content
-                assert "3" in content
+                assert "3" in content, f"Expected '3' in content but got: {repr(content)}"
             
             listen_thread.join()
             assert popen.poll() == 0
@@ -254,9 +258,9 @@ class TestStreamablePopen:
             command = ["python", "-c", 
                       "import time, sys; "
                       "print('1', file=sys.stderr, flush=True); "
-                      "time.sleep(0.5); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('2', file=sys.stderr, flush=True); "
-                      "time.sleep(0.5); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('3', file=sys.stderr, flush=True)"]
             
             popen = StreamablePopen(str(log_file), command)
@@ -266,28 +270,31 @@ class TestStreamablePopen:
             listen_thread.start()
             
             # Check that "1" appears first
-            time.sleep(0.2)  # Give it time to start and print "1"
+            time.sleep(self.buffer_time)  # Increased delay for CI environments to start subprocess
             with open(log_file) as f:
                 content = f.read()
-                assert "1" in content
+                print(f"DEBUG stderr test: After {self.buffer_time}s, file content: {repr(content)}")
+                assert "1" in content, f"Expected '1' in content but got: {repr(content)}"
                 assert "2" not in content
                 assert "3" not in content
             
             # Check that "2" appears next
-            time.sleep(0.5)  # Wait for "2" to be printed
+            time.sleep(self.buffer_time)  # Wait for "2" to be printed
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG stderr test: After {self.buffer_time * 2}s, file content: {repr(content)}")
                 assert "1" in content
-                assert "2" in content
+                assert "2" in content, f"Expected '2' in content but got: {repr(content)}"
                 assert "3" not in content
             
             # Check that "3" appears last
-            time.sleep(0.5)  # Wait for "3" to be printed
+            time.sleep(self.buffer_time)  # Wait for "3" to be printed
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG stderr test: After {self.buffer_time * 3}s, file content: {repr(content)}")
                 assert "1" in content
                 assert "2" in content
-                assert "3" in content
+                assert "3" in content, f"Expected '3' in content but got: {repr(content)}"
             
             listen_thread.join()
             assert popen.poll() == 0
@@ -303,11 +310,11 @@ class TestStreamablePopen:
             command = ["python", "-c", 
                       "import time, sys; "
                       "print('stdout-1', flush=True); "
-                      "time.sleep(0.3); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('stderr-1', file=sys.stderr, flush=True); "
-                      "time.sleep(0.3); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('stdout-2', flush=True); "
-                      "time.sleep(0.3); "
+                      f"time.sleep({self.buffer_time}); "
                       "print('stderr-2', file=sys.stderr, flush=True)"]
             
             popen = StreamablePopen(str(log_file), command)
@@ -317,40 +324,44 @@ class TestStreamablePopen:
             listen_thread.start()
             
             # Check first stdout appears
-            time.sleep(0.15)
+            time.sleep(self.buffer_time)  # Increased initial delay for CI environments
             with open(log_file) as f:
                 content = f.read()
-                assert "stdout-1" in content
+                print(f"DEBUG mixed test: After {self.buffer_time}s, file content: {repr(content)}")
+                assert "stdout-1" in content, f"Expected 'stdout-1' in content but got: {repr(content)}"
                 assert "stderr-1" not in content
                 assert "stdout-2" not in content
                 assert "stderr-2" not in content
             
             # Check first stderr appears
-            time.sleep(0.3)
+            time.sleep(self.buffer_time)
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG mixed test: After {self.buffer_time * 2}s, file content: {repr(content)}")
                 assert "stdout-1" in content
-                assert "stderr-1" in content
+                assert "stderr-1" in content, f"Expected 'stderr-1' in content but got: {repr(content)}"
                 assert "stdout-2" not in content
                 assert "stderr-2" not in content
             
             # Check second stdout appears
-            time.sleep(0.3)
+            time.sleep(self.buffer_time)
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG mixed test: After {self.buffer_time * 3}s, file content: {repr(content)}")
                 assert "stdout-1" in content
                 assert "stderr-1" in content
-                assert "stdout-2" in content
+                assert "stdout-2" in content, f"Expected 'stdout-2' in content but got: {repr(content)}"
                 assert "stderr-2" not in content
             
             # Check second stderr appears
-            time.sleep(0.3)
+            time.sleep(self.buffer_time)  # Increased delay to ensure last output is written
             with open(log_file) as f:
                 content = f.read()
+                print(f"DEBUG mixed test: After {self.buffer_time * 4}s, file content: {repr(content)}")
                 assert "stdout-1" in content
                 assert "stderr-1" in content
                 assert "stdout-2" in content
-                assert "stderr-2" in content
+                assert "stderr-2" in content, f"Expected 'stderr-2' in content but got: {repr(content)}"
             
             listen_thread.join()
             assert popen.poll() == 0
