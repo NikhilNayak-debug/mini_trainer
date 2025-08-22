@@ -221,7 +221,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Increased delay for CI environments to start subprocess
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG: After {self.buffer_time}s, file content: {repr(content)}")
                 assert "1" in content, f"Expected '1' in content but got: {repr(content)}"
                 assert "2" not in content
                 assert "3" not in content
@@ -230,7 +229,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Wait for "2" to be printed
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG: After {self.buffer_time *2}s, file content: {repr(content)}")
                 assert "1" in content
                 assert "2" in content, f"Expected '2' in content but got: {repr(content)}"
                 assert "3" not in content
@@ -239,7 +237,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Wait for "3" to be printed
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG: After {self.buffer_time * 3}s, file content: {repr(content)}")
                 assert "1" in content
                 assert "2" in content
                 assert "3" in content, f"Expected '3' in content but got: {repr(content)}"
@@ -273,7 +270,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Increased delay for CI environments to start subprocess
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG stderr test: After {self.buffer_time}s, file content: {repr(content)}")
                 assert "1" in content, f"Expected '1' in content but got: {repr(content)}"
                 assert "2" not in content
                 assert "3" not in content
@@ -282,7 +278,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Wait for "2" to be printed
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG stderr test: After {self.buffer_time * 2}s, file content: {repr(content)}")
                 assert "1" in content
                 assert "2" in content, f"Expected '2' in content but got: {repr(content)}"
                 assert "3" not in content
@@ -291,7 +286,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Wait for "3" to be printed
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG stderr test: After {self.buffer_time * 3}s, file content: {repr(content)}")
                 assert "1" in content
                 assert "2" in content
                 assert "3" in content, f"Expected '3' in content but got: {repr(content)}"
@@ -327,7 +321,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Increased initial delay for CI environments
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG mixed test: After {self.buffer_time}s, file content: {repr(content)}")
                 assert "stdout-1" in content, f"Expected 'stdout-1' in content but got: {repr(content)}"
                 assert "stderr-1" not in content
                 assert "stdout-2" not in content
@@ -337,7 +330,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG mixed test: After {self.buffer_time * 2}s, file content: {repr(content)}")
                 assert "stdout-1" in content
                 assert "stderr-1" in content, f"Expected 'stderr-1' in content but got: {repr(content)}"
                 assert "stdout-2" not in content
@@ -347,7 +339,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG mixed test: After {self.buffer_time * 3}s, file content: {repr(content)}")
                 assert "stdout-1" in content
                 assert "stderr-1" in content
                 assert "stdout-2" in content, f"Expected 'stdout-2' in content but got: {repr(content)}"
@@ -357,7 +348,6 @@ class TestStreamablePopen:
             time.sleep(self.buffer_time)  # Increased delay to ensure last output is written
             with open(log_file) as f:
                 content = f.read()
-                print(f"DEBUG mixed test: After {self.buffer_time * 4}s, file content: {repr(content)}")
                 assert "stdout-1" in content
                 assert "stderr-1" in content
                 assert "stdout-2" in content
