@@ -10,6 +10,9 @@ from tqdm import tqdm
 
 from mini_trainer.utils import log_rank_0, check_distributed_is_synchronized
 
+# Memory optimization constants
+OSFT_CACHE_CLEAR_INTERVAL = 5  # Clear GPU cache every N parameters during matrix reconstruction
+
 class SVDDictBase(t.TypedDict):
     U_high: torch.Tensor
     S_high: torch.Tensor
@@ -1026,10 +1029,15 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
                 project_gradient_to_orthogonal_space(svd_dict)
 
         def prepare_state_dict_for_save(self, state_dict):
-            """Reconstruct dense weights into ``state_dict`` for saving."""
+            """Reconstruct dense weights into ``state_dict`` for saving with memory optimization."""
             if not hasattr(self, "name_mapping"):
                 return state_dict
-            for orig, safe in self.name_mapping.items():
+            
+            log_rank_0("Reconstructing OSFT weights for checkpoint saving...")
+            
+            # Process parameters one at a time to minimize peak memory usage
+            for i, (orig, safe) in enumerate(self.name_mapping.items()):
+                # Extract SVD components
                 U_high = state_dict.pop(f"{safe}_U_high")
                 S_high = state_dict.pop(f"{safe}_S_high")
                 V_high = state_dict.pop(f"{safe}_V_high")
@@ -1049,6 +1057,19 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
                     upcast_dtype=self.upcast_dtype,
                 )
                 state_dict[orig] = W
+                
+                # Explicitly delete intermediate tensors to free memory
+                del U_high, S_high, V_high, U_low, S_low, V_low
+                
+                # Clear GPU cache every few parameters to prevent accumulation
+                if (i + 1) % OSFT_CACHE_CLEAR_INTERVAL == 0:
+                    torch.cuda.empty_cache()
+                    log_rank_0(f"Processed {i + 1}/{len(self.name_mapping)} OSFT parameters")
+            
+            # Final cleanup
+            torch.cuda.empty_cache()
+            log_rank_0(f"Finished reconstructing {len(self.name_mapping)} OSFT parameters")
+            
             return state_dict
 
     ModelWithOSFT.__name__ = f"{base_cls.__name__}WithOSFT"
