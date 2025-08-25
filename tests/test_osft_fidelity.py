@@ -9,9 +9,12 @@ original untouched model parameters (within numerical tolerance).
 import pytest
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from unittest.mock import MagicMock, patch
 import os
 from pathlib import Path
+
+from mini_trainer.osft_utils import create_osft_model_class
 
 
 class TestOSFTReconstructionFidelity:
@@ -369,3 +372,131 @@ class TestSVDNumericalStability:
         assert weight.grad is not None, "Gradient should be computed"
         assert not torch.isnan(weight.grad).any(), "Gradients should not contain NaN"
         assert not torch.isinf(weight.grad).any(), "Gradients should not contain Inf"
+
+
+class TestFactorizedLinearAccuracy:
+    """Test that _factorized_linear produces the same results as standard linear operations."""
+    
+    @pytest.fixture
+    def simple_model_with_osft(self):
+        """Create a simple model with OSFT for testing factorized linear operations."""
+        # Create a simple base model with one linear layer
+        class SimpleModel(nn.Module):
+            def __init__(self, config, **kwargs):
+                super().__init__()
+                self.config = config
+                self.linear = nn.Linear(64, 32, bias=True)
+                self.dtype = torch.float32
+                
+                # Initialize with reasonable values for testing
+                nn.init.normal_(self.linear.weight, mean=0.0, std=0.02)
+                nn.init.zeros_(self.linear.bias)
+        
+        # Create OSFT version of the model
+        OSFTModelClass = create_osft_model_class(SimpleModel)
+        
+        # Create model without OSFT first to capture original weights
+        config = MagicMock()
+        config.vocab_size = 1000
+        model = OSFTModelClass(
+            config=config,
+            osft_config={},
+            initialize_osft=False,
+            upcast_dtype=torch.float32,
+            output_dtype=torch.float32
+        )
+        
+        # Store original weights and bias before OSFT conversion
+        original_weight = model.linear.weight.data.clone()
+        original_bias = model.linear.bias.data.clone()
+        
+        # Set OSFT configuration on the model
+        osft_config = {"linear.weight": 16}  # Use half the min dimension for rank
+        model.osft_config = osft_config
+        model.osft_unfreeze_rank_ratio = 0.5
+        
+        # Now initialize OSFT on the same model instance
+        model.reinitialize_osft(decompose_existing_weights=True)
+        
+        # Return both the model and the original parameters
+        return {
+            'model': model,
+            'original_weight': original_weight,
+            'original_bias': original_bias
+        }
+    
+    def test_factorized_linear_2d_input(self, simple_model_with_osft):
+        """Test factorized linear with 2D input matches standard linear operation."""
+        model = simple_model_with_osft['model']
+        original_weight = simple_model_with_osft['original_weight']
+        original_bias = simple_model_with_osft['original_bias']
+        
+        # Create test input (batch_size=8, input_dim=64) 
+        test_input = torch.randn(8, 64, dtype=torch.float32)
+        
+        # Get expected result using standard linear operation
+        expected_output = F.linear(test_input, original_weight, original_bias)
+        
+        # Get SVD dict for the linear layer
+        svd_dict = model.get_svd_dict("linear_weight")
+        
+        # Get actual result using factorized linear
+        actual_output = model._factorized_linear(test_input, svd_dict, original_bias)
+        
+        # Check shapes match
+        assert actual_output.shape == expected_output.shape, \
+            f"Shape mismatch: {actual_output.shape} vs {expected_output.shape}"
+        
+        # Check outputs are approximately equal (with reasonable tolerance for SVD approximation)
+        assert torch.allclose(actual_output, expected_output, rtol=1e-3, atol=1e-4), \
+            f"Factorized linear output differs from standard linear. Max diff: {torch.max(torch.abs(actual_output - expected_output))}"
+    
+    def test_factorized_linear_3d_input(self, simple_model_with_osft):
+        """Test factorized linear with 3D input matches standard linear operation.""" 
+        model = simple_model_with_osft['model']
+        original_weight = simple_model_with_osft['original_weight']
+        original_bias = simple_model_with_osft['original_bias']
+        
+        # Create test input (batch_size=4, seq_len=16, input_dim=64)
+        test_input = torch.randn(4, 16, 64, dtype=torch.float32)
+        
+        # Get expected result using standard linear operation
+        expected_output = F.linear(test_input, original_weight, original_bias)
+        
+        # Get SVD dict for the linear layer
+        svd_dict = model.get_svd_dict("linear_weight")
+        
+        # Get actual result using factorized linear  
+        actual_output = model._factorized_linear(test_input, svd_dict, original_bias)
+        
+        # Check shapes match
+        assert actual_output.shape == expected_output.shape, \
+            f"Shape mismatch: {actual_output.shape} vs {expected_output.shape}"
+        
+        # Check outputs are approximately equal (with reasonable tolerance for SVD approximation)
+        assert torch.allclose(actual_output, expected_output, rtol=1e-3, atol=1e-4), \
+            f"Factorized linear output differs from standard linear. Max diff: {torch.max(torch.abs(actual_output - expected_output))}"
+    
+    def test_factorized_linear_without_bias(self, simple_model_with_osft):
+        """Test factorized linear without bias term."""
+        model = simple_model_with_osft['model']
+        original_weight = simple_model_with_osft['original_weight']
+        
+        # Create test input
+        test_input = torch.randn(6, 64, dtype=torch.float32)
+        
+        # Get expected result using standard linear operation (no bias)
+        expected_output = F.linear(test_input, original_weight, None)
+        
+        # Get SVD dict for the linear layer
+        svd_dict = model.get_svd_dict("linear_weight")
+        
+        # Get actual result using factorized linear (no bias)
+        actual_output = model._factorized_linear(test_input, svd_dict, None)
+        
+        # Check shapes match
+        assert actual_output.shape == expected_output.shape
+        
+        # Check outputs are approximately equal
+        assert torch.allclose(actual_output, expected_output, rtol=1e-3, atol=1e-4), \
+            f"Factorized linear without bias differs from standard linear. Max diff: {torch.max(torch.abs(actual_output - expected_output))}"
