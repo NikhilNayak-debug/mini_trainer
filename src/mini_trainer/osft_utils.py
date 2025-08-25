@@ -10,6 +10,11 @@ from tqdm import tqdm
 
 from mini_trainer.utils import log_rank_0, check_distributed_is_synchronized
 
+import os
+
+# Memory optimization constants
+OSFT_CACHE_CLEAR_INTERVAL = os.getenv('OSFT_CACHE_CLEAR_INTERVAL', 5)  # Clear GPU cache every N parameters during matrix reconstruction
+
 class SVDDictBase(t.TypedDict):
     U_high: torch.Tensor
     S_high: torch.Tensor
@@ -252,8 +257,13 @@ def project_gradient_to_orthogonal_space(svd_dict: SVDDecompositionDict):
             start = rank * local_dU.size(0)
             end = start + local_dU.size(0)
             local_U_high = local_U_high[start:end]
-        proj = local_U_high @ (local_U_high.transpose(0, 1) @ local_dU)
-        local_dU.sub_(proj)
+        
+        # Perform projection computation using memory-efficient operations
+        # Memory-optimized projection: dU = dU - U_high @ (U_high.T @ dU)
+        # Use addmm_ for efficient in-place operation
+        proj_coeff = torch.mm(local_U_high.transpose(0, 1), local_dU)
+        local_dU.addmm_(local_U_high, proj_coeff, alpha=-1.0)
+        
         if hasattr(dU, "_local_tensor"):
             dU._local_tensor.copy_(local_dU)
         else:
@@ -269,8 +279,13 @@ def project_gradient_to_orthogonal_space(svd_dict: SVDDecompositionDict):
             start = rank * local_dV.size(1)
             end = start + local_dV.size(1)
             local_V_high = local_V_high[:, start:end]
-        proj = (local_dV @ local_V_high.transpose(0, 1)) @ local_V_high
-        local_dV.sub_(proj)
+        
+        # Perform projection computation using memory-efficient operations
+        # Memory-optimized projection: dV = dV - (dV @ V_high.T) @ V_high
+        # Use addmm_ for efficient in-place operation
+        proj_coeff = torch.mm(local_dV, local_V_high.transpose(0, 1))
+        local_dV.addmm_(proj_coeff, local_V_high, alpha=-1.0)
+        
         if hasattr(dV, "_local_tensor"):
             dV._local_tensor.copy_(local_dV)
         else:
@@ -724,12 +739,8 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
 
                 def make_forward(sn, bias):
                     def forward(x):
-                        W = self._reconstruct_weight_by_safe_name(sn)
-
-                        # NOTE(osilkin): the model itself now stores variables to upcast SVD compute + output
-                        if W.dtype != x.dtype:
-                            W = W.to(x.dtype)
-                        return F.linear(x, W, bias)
+                        svd_dict = self.get_svd_dict(sn)
+                        return self._factorized_linear(x, svd_dict, bias)
 
                     return forward
 
@@ -847,10 +858,8 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
                     # Override linear projection with dynamic reconstruction
                     def make_forward(sn, bias):
                         def forward(x):
-                            W = self._reconstruct_weight_by_safe_name(sn)
-                            if W.dtype != x.dtype:
-                                W = W.to(x.dtype)
-                            return F.linear(x, W, bias)
+                            svd_dict = self.get_svd_dict(sn)
+                            return self._factorized_linear(x, svd_dict, bias)
                         return forward
 
                     mod.forward = make_forward(safe_name, bias)
@@ -900,6 +909,95 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
                 output_dtype=output_dtype,
             )
 
+        def _factorized_linear(self, x, svd_dict, bias=None):
+            """
+            Memory-efficient factorized linear operation using SVD components.
+            
+            Computes: x @ (U_high @ S_high @ V_high + U_low @ S_low @ V_low)
+            As: (x @ V_high.T) @ (S_high @ U_high.T) + (x @ V_low.T) @ (S_low @ U_low.T)
+            
+            This avoids reconstructing the full weight matrix, using only rank-sized intermediates.
+            Handles both 2D and 3D input tensors (batch_size, seq_len, hidden_dim).
+            """
+            U_high = svd_dict["U_high"]
+            S_high = svd_dict["S_high"]
+            V_high = svd_dict["V_high"]
+            U_low = svd_dict["U_low"]
+            S_low = svd_dict["S_low"]
+            V_low = svd_dict["V_low"]
+            
+            # Ensure all tensors are on the same device and dtype as input
+            device = x.device
+            dtype = x.dtype
+            
+            # Handle both 2D and 3D input tensors
+            original_shape = x.shape
+            if x.dim() == 3:
+                # Flatten 3D input [batch, seq, hidden] -> [batch*seq, hidden] 
+                batch_size, seq_len, hidden_dim = x.shape
+                x_flat = x.view(-1, hidden_dim)
+            elif x.dim() == 2:
+                x_flat = x
+                batch_size, seq_len = None, None
+            else:
+                raise ValueError(f"Input tensor must be 2D or 3D, got {x.dim()}D")
+            
+            # Cast to appropriate dtypes for computation
+            upcast_dtype = self.upcast_dtype
+            target_dtype = dtype
+            
+            # High-rank component: x @ V_high.T @ (S_high @ U_high.T)
+            result = None
+            if U_high.numel() > 0 and S_high.numel() > 0:
+                # Cast to upcast dtype for numerical stability
+                V_high_work = V_high.to(device=device, dtype=upcast_dtype)
+                U_high_work = U_high.to(device=device, dtype=upcast_dtype)
+                S_high_work = S_high.to(device=device, dtype=upcast_dtype)
+                x_work = x_flat.to(upcast_dtype)
+                
+                # x @ V_high.T -> intermediate shape: (batch*seq, rank_high)
+                x_V = torch.mm(x_work, V_high_work.transpose(0, 1))
+                # (x @ V_high.T) @ (S_high @ U_high.T) -> final shape: (batch*seq, output_dim)
+                high_contrib = torch.mm(x_V * S_high_work.unsqueeze(0), U_high_work.transpose(0, 1))
+                result = high_contrib.to(target_dtype)
+            
+            # Low-rank component: x @ V_low.T @ (S_low @ U_low.T)
+            if U_low.numel() > 0 and S_low.numel() > 0:
+                # Cast to upcast dtype for numerical stability
+                V_low_work = V_low.to(device=device, dtype=upcast_dtype)
+                U_low_work = U_low.to(device=device, dtype=upcast_dtype)
+                S_low_work = S_low.to(device=device, dtype=upcast_dtype)
+                x_work = x_flat.to(upcast_dtype)
+                
+                # x @ V_low.T -> intermediate shape: (batch*seq, rank_low)
+                x_V = torch.mm(x_work, V_low_work.transpose(0, 1))
+                # (x @ V_low.T) @ (S_low @ U_low.T) -> final shape: (batch*seq, output_dim)
+                low_contrib = torch.mm(x_V * S_low_work.unsqueeze(0), U_low_work.transpose(0, 1))
+                low_contrib = low_contrib.to(target_dtype)
+                
+                if result is not None:
+                    result = result + low_contrib
+                else:
+                    result = low_contrib
+            
+            # Handle case where both components are empty (shouldn't happen in practice)
+            if result is None:
+                # Create zero output with correct shape
+                output_dim = U_high.size(0) if U_high.numel() > 0 else U_low.size(0)
+                result = torch.zeros(x_flat.size(0), output_dim, device=device, dtype=target_dtype)
+            
+            # Add bias if present
+            if bias is not None:
+                bias_work = bias.to(device=device, dtype=target_dtype)
+                result = result + bias_work.unsqueeze(0)
+            
+            # Restore original shape if input was 3D
+            if len(original_shape) == 3:
+                output_dim = result.size(-1)
+                result = result.view(batch_size, seq_len, output_dim)
+            
+            return result
+
         def get_svd_dict(self, safe_name: str) -> SVDDecompositionDict:
             if safe_name not in self.osft_params:
                 raise ValueError(f'{safe_name} doesnt exist in the OSFT parameters')
@@ -933,10 +1031,15 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
                 project_gradient_to_orthogonal_space(svd_dict)
 
         def prepare_state_dict_for_save(self, state_dict):
-            """Reconstruct dense weights into ``state_dict`` for saving."""
+            """Reconstruct dense weights into ``state_dict`` for saving with memory optimization."""
             if not hasattr(self, "name_mapping"):
                 return state_dict
-            for orig, safe in self.name_mapping.items():
+            
+            log_rank_0("Reconstructing OSFT weights for checkpoint saving...")
+            
+            # Process parameters one at a time to minimize peak memory usage
+            for i, (orig, safe) in enumerate(self.name_mapping.items()):
+                # Extract SVD components
                 U_high = state_dict.pop(f"{safe}_U_high")
                 S_high = state_dict.pop(f"{safe}_S_high")
                 V_high = state_dict.pop(f"{safe}_V_high")
@@ -956,6 +1059,19 @@ def create_osft_model_class(base_cls) -> type[OSFTModel]:
                     upcast_dtype=self.upcast_dtype,
                 )
                 state_dict[orig] = W
+                
+                # Explicitly delete intermediate tensors to free memory
+                del U_high, S_high, V_high, U_low, S_low, V_low
+                
+                # Clear GPU cache every few parameters to prevent accumulation
+                if (i + 1) % OSFT_CACHE_CLEAR_INTERVAL == 0:
+                    torch.cuda.empty_cache()
+                    log_rank_0(f"Processed {i + 1}/{len(self.name_mapping)} OSFT parameters")
+            
+            # Final cleanup
+            torch.cuda.empty_cache()
+            log_rank_0(f"Finished reconstructing {len(self.name_mapping)} OSFT parameters")
+            
             return state_dict
 
     ModelWithOSFT.__name__ = f"{base_cls.__name__}WithOSFT"
