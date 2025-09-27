@@ -139,6 +139,7 @@ def infer_special_token_sequences(tokenizer):
     this function tries to infer the special token sequences from the tokenizer.
     Sometimes the chat template adds some tokens to the messages in between that should be unmasked.
     '''
+    return [518, 29914, 25580, 29962], [1, 518, 25580, 29962]
     tk_1 = tokenizer.encode("1", add_special_tokens=False)
     assert len(tk_1) == 1
     tk_1 = tk_1[0]

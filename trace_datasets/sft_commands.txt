@@ -1,0 +1,96 @@
+# Sequential SFT Training Commands for TRACE Benchmark
+# LLaMA-2-7B-Chat with TRACE hyperparameters
+# Learning Rate: 1e-5, Batch Size: 128, Weight Decay: 0
+
+# Run these commands from /workspace/mini_trainer directory
+cd /workspace/mini_trainer
+
+# STEP 1: C-STANCE (1 epoch, ~5000 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step1_cstance \
+  --data-path ./trace_datasets/tokenized/C-STANCE_train_tokenized.jsonl \
+  --model-name-or-path meta-llama/Llama-2-7b-chat-hf \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# STEP 2: FOMC (1 epoch, ~5000 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step2_fomc \
+  --data-path ./trace_datasets/tokenized/FOMC_train_tokenized.jsonl \
+  --model-name-or-path ./trace_outputs/sft_step1_cstance/hf_format/samples_5000.0 \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# STEP 3: MeetingBank (1 epoch, ~5000 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step3_meetingbank \
+  --data-path ./trace_datasets/tokenized/MeetingBank_train_tokenized.jsonl \
+  --model-name-or-path ./trace_outputs/sft_step2_fomc/hf_format/samples_5000.0 \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# STEP 4: ScienceQA (1 epoch, ~5000 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step4_scienceqa \
+  --data-path ./trace_datasets/tokenized/ScienceQA_train_tokenized.jsonl \
+  --model-name-or-path ./trace_outputs/sft_step3_meetingbank/hf_format/samples_5000.0 \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# STEP 5: NumGLUE-cm (1 epoch, ~282 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step5_numglue_cm \
+  --data-path ./trace_datasets/tokenized/NumGLUE-cm_train_tokenized.jsonl \
+  --model-name-or-path ./trace_outputs/sft_step4_scienceqa/hf_format/samples_5000.0 \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# STEP 6: NumGLUE-ds (1 epoch, ~1131 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step6_numglue_ds \
+  --data-path ./trace_datasets/tokenized/NumGLUE-ds_train_tokenized.jsonl \
+  --model-name-or-path ./trace_outputs/sft_step5_numglue_cm/hf_format/samples_282.0 \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# STEP 7: 20Minuten (1 epoch, ~5000 samples)
+torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
+  --output-dir ./trace_outputs/sft_step7_20minuten \
+  --data-path ./trace_datasets/tokenized/20Minuten_train_tokenized.jsonl \
+  --model-name-or-path ./trace_outputs/sft_step6_numglue_ds/hf_format/samples_1131.0 \
+  --learning-rate 1e-5 \
+  --batch-size 128 \
+  --max-tokens-per-gpu 128000 \
+  --max-epochs 1 \
+  --use-liger-kernels \
+  --save-final-checkpoint
+
+# Final SFT model will be at:
+# ./trace_outputs/sft_step7_20minuten/hf_format/samples_5000.0
+
+# Note: Adjust the checkpoint paths if the actual sample counts differ
+# Check the actual hf_format/samples_* directories after each step
