@@ -1,325 +1,200 @@
-{"messages": [{"role": "user", "content": "Find the number of moles of NH3 formed on combining 3 moles of NH4Cl and 3 moles of NaOH"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of HCH3CO2 are required to react with 1 mole of NaOH to form 1 mole of NaCH3CO2 along with 1 mole of H2O"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in Butanoic acid"}, {"role": "assistant", "content": "9.09"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 1 mole of Ammonium chloride and 1 mole of Sodium hydroxide"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of Benzene weigh"}, {"role": "assistant", "content": "780"}]}
-{"messages": [{"role": "user", "content": "How much does 3 moles of BaCl2 weigh"}, {"role": "assistant", "content": "621"}]}
-{"messages": [{"role": "user", "content": "A cyclist covers a distance of 70 meters in 10 seconds. Calculate his speed."}, {"role": "assistant", "content": "7"}]}
-{"messages": [{"role": "user", "content": "How many moles of HCl are required to react with 1 mole of NaOH to form 1 mole of NaCl along with 1 mole of H2O"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 N, 4 H, and 1 I"}, {"role": "assistant", "content": "145"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Ba in Barium bromide"}, {"role": "assistant", "content": "46.13"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Calcium and 2 Hydrogen"}, {"role": "assistant", "content": "42"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of C2H6 formed on combining 3 moles of C2H2 and 6 moles of H2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of NH4Cl are required to react with 1 mole of H2O to form 1 mole of HCl along with 1 mole of NH4OH"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of C5H11Cl formed on combining 3 moles of C5H12O and 3 moles of HCl"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Fe2O3"}, {"role": "assistant", "content": "30"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in Al(OH)3"}, {"role": "assistant", "content": "3.85"}]}
-{"messages": [{"role": "user", "content": "How many moles of Tetrachloromethane are required to react with 2 moles of Methane to form 4 moles of Dichloromethane"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of H3BO3 weigh"}, {"role": "assistant", "content": "620"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Carbon formed on combining 6 moles of Magnesium and 3 moles of Carbon dioxide"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of Li3N are required to react with 3 moles of H2O to form 3 moles of LiOH along with 1 mole of NH3"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 7 moles of H3BO3"}, {"role": "assistant", "content": "434"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Calcium hydroxide that is required to react with 2 moles of Carbon dioxide to form 2 moles of Calcium carbonate along with 2 moles of Water"}, {"role": "assistant", "content": "148"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Barium sulfate"}, {"role": "assistant", "content": "233"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Carbon dioxide formed on combining 1 mole of Sodium bicarbonate and 1 mole of ethanoic acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Ammonium chloride"}, {"role": "assistant", "content": "53"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Calcium, 1 Carbon, and 3 Oxygen"}, {"role": "assistant", "content": "100"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of NaOH formed on combining 1 mole of NaH and 1 mole of H2O"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of Oxygen are required to react with 2 moles of Ethane to form 2 moles of Vinyl alcohol along with 2 moles of Water"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Sodium hydroxide and 1 mole of Sulfuric acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O that is required to react with 2 moles of Be2C to form 4 moles of Be(OH)2 along with 2 moles of CH4"}, {"role": "assistant", "content": "144"}]}
-{"messages": [{"role": "user", "content": "Excluding stoppages, the speed of a bus is 120 kmph and including stoppages, it is 93 kmph. For how many minutes does the bus stop per hour?"}, {"role": "assistant", "content": "13.5"}]}
-{"messages": [{"role": "user", "content": "How much does 9 moles of AlI3 weigh"}, {"role": "assistant", "content": "3672"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Al and 3 Br"}, {"role": "assistant", "content": "267"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Ammonium chloride that is required to react with 1 mole of Sodium hydroxide to form 1 mole of Ammonium hydroxide along with 1 mole of Sodium chloride"}, {"role": "assistant", "content": "53"}]}
-{"messages": [{"role": "user", "content": "How many moles of Ammonium chloride are required to react with 3 moles of Sodium hydroxide to form 3 moles of Ammonia, 3 moles of Water and 3 moles of Sodium chloride"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of F in Aluminum fluoride"}, {"role": "assistant", "content": "67.86"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of N in Ammonium bromide"}, {"role": "assistant", "content": "14.29"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Ba, 1 S, and 4 O"}, {"role": "assistant", "content": "233"}]}
-{"messages": [{"role": "user", "content": "A train travelled at an average speed of 10 m/s to cover a distance of 60 meters. What is the total duration of the journey?"}, {"role": "assistant", "content": "6"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in Butane"}, {"role": "assistant", "content": "73.85"}]}
-{"messages": [{"role": "user", "content": "How many moles of HNO3 are required to react with 2 moles of NH3 to form 2 moles of NH4NO3"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium hypochlorite formed on combining 4 moles of Sodium hydroxide and 2 moles of Chlorine"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of CaCO3 are required to react with 4 moles of HCl to form 2 moles of CaCl2, 2 moles of CO2 and 2 moles of H2O"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "A train traveling at 108 kmph crosses a man in 23 seconds. What is the length of the train in meters?"}, {"role": "assistant", "content": "690"}]}
-{"messages": [{"role": "user", "content": "How many moles of Calcium carbonate are required to react with 4 moles of Hydrochrolic acid to form 2 moles of Calcium chloride, 2 moles of Carbon dioxide and 2 moles of Water"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Hydrogen formed on combining 1 mole of Methane and 1 mole of Benzene"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of NH3 formed on combining 3 moles of NH4Cl and 3 moles of KOH"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of KOH are required to react with 2 moles of HCl to form 2 moles of H2O along with 2 moles of KCl"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 2 moles of Ammonium nitrate  to form 2 moles of Sodium nitrate, 2 moles of Ammonia and 2 moles of Water"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 1 mole of NaOH and 1 mole of HClO4"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Sodium hydroxide and 1 mole of Sulfuric acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 2 moles of Nitric acid and 2 moles of Sodium bicarbonate"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of C2H6 are required to react with 14 moles of Cl2 to form 4 moles of CCl4 along with 12 moles of HCl"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 1 mole of Sodium hydroxide and 1 mole of Sulfuric acid"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "Christopher decided to cycle to his friend’s house at a speed of 46 km/h and the journey took 7 hours. How far did Christopher cycle?"}, {"role": "assistant", "content": "322"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sulfur dioxide formed on combining 2 moles of Sodium bisulfite and 2 moles of Hydrochrolic acid"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of FeSO4 formed on combining 3 moles of Fe and 3 moles of H2SO4"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Barium oxide"}, {"role": "assistant", "content": "153"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of Carbon monoxide"}, {"role": "assistant", "content": "140"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Ba(OH)2 formed on combining 3 moles of BaO and 3 moles of H2O"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of S in Barium sulfate"}, {"role": "assistant", "content": "13.73"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in Acetone"}, {"role": "assistant", "content": "10.34"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 3 H, 1 B, and 3 O"}, {"role": "assistant", "content": "62"}]}
-{"messages": [{"role": "user", "content": "How many moles of NH4Cl are required to react with 1 mole of NaOH to form 1 mole of NH3, 1 mole of H2O and 1 mole of NaCl"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 1 mole of Ammonium chloride to form 1 mole of Ammonia, 1 mole of Water and 1 mole of Sodium chloride"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Fe and 3 O"}, {"role": "assistant", "content": "160"}]}
-{"messages": [{"role": "user", "content": "How many moles of Iron are required to react with 2 moles of Sulfuric acid to form 2 moles of Iron (II) sulfate along with 2 moles of Hydrogen"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 3 moles of Sulfuric acid and 6 moles of Sodium hydroxide"}, {"role": "assistant", "content": "6"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of KBrO3"}, {"role": "assistant", "content": "168"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Amyl alcohol and 1 mole of Hydrochrolic acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How much does 9 moles of Carbonic acid weigh"}, {"role": "assistant", "content": "558"}]}
-{"messages": [{"role": "user", "content": "How many moles of Methane are required to react with 3 moles of Chlorine to form 1 mole of Chloroform along with 3 moles of Hydrochrolic acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How much does 7 moles of Ca(OH)2 weigh"}, {"role": "assistant", "content": "518"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Water that is required to react with 1 mole of Carbon dioxide to form 1 mole of Carbonic acid"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 3 moles of BaO"}, {"role": "assistant", "content": "459"}]}
-{"messages": [{"role": "user", "content": "How many moles of Water are required to react with 1 mole of Beryllium carbide to form 2 moles of Beryllium hydroxide along with 1 mole of Methane"}, {"role": "assistant", "content": "4"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Hydrochrolic acid formed on combining 1 mole of Methane and 4 moles of Chlorine"}, {"role": "assistant", "content": "4"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Bromomethane formed on combining 2 moles of Methane and 2 moles of Bromine"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Madeline decided to cycle to his friend’s house at a speed of 22 km/h and the journey took 5 hours. How far did Madeline cycle?"}, {"role": "assistant", "content": "110"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium sulfate formed on combining 2 moles of Sulfuric acid and 4 moles of Sodium hydroxide"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Dichloromethane formed on combining 2 moles of Methane and 4 moles of Chlorine"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "On a highway a car runs at an average speed of 6 mph. How much increase in speed is needed to cover 184 miles in 8 hours?"}, {"role": "assistant", "content": "17"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CO2 formed on combining 3 moles of CH4 and 6 moles of O2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Ba and 2 Br"}, {"role": "assistant", "content": "297"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 3 moles of NH4Cl and 3 moles of NaOH"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of CaBr2"}, {"role": "assistant", "content": "200"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Methane formed on combining 3 moles of Beryllium carbide and 12 moles of Water"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 3 moles of NaOH and 3 moles of H2SO4"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "A train travelled at an average speed of 9 m/s to cover a distance of 90 meters. What is the total duration of the journey?"}, {"role": "assistant", "content": "10"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of NH4NO3 and 2 moles of NaOH"}, {"role": "assistant", "content": "36"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in Aluminum carbonate"}, {"role": "assistant", "content": "15.38"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 3 Hydrogen, 1 Boron, and 3 Oxygen"}, {"role": "assistant", "content": "62"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in C4H1O"}, {"role": "assistant", "content": "24.62"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Ammonia formed on combining 3 moles of Ammonium chloride and 3 moles of Sodium hydroxide"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of Hydrochrolic acid are required to react with 3 moles of Sodium bicarbonate to form 3 moles of Water, 3 moles of Carbon dioxide and 3 moles of Sodium chloride"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 6 moles of Barium hydroxide"}, {"role": "assistant", "content": "1026"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Ca and 2 Br"}, {"role": "assistant", "content": "200"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Hydrogen, 1 Chlorine, and 2 Oxygen"}, {"role": "assistant", "content": "68"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Ba in BaBr2"}, {"role": "assistant", "content": "46.13"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 6 Carbon, 8 Hydrogen, and 7 Oxygen"}, {"role": "assistant", "content": "192"}]}
-{"messages": [{"role": "user", "content": "How much does 4 moles of Bromic acid weigh"}, {"role": "assistant", "content": "516"}]}
-{"messages": [{"role": "user", "content": "Find the amount of NH4Cl that is required to react with 1 mole of NaOH to form 1 mole of NH3, 1 mole of H2O and 1 mole of NaCl"}, {"role": "assistant", "content": "53"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 10 moles of Ammonium iodide"}, {"role": "assistant", "content": "1450"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Carbon monoxide"}, {"role": "assistant", "content": "57.14"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 2 moles of CH4 and 2 moles of Cl2"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How much does 3 moles of Dinitrogen trioxide weigh"}, {"role": "assistant", "content": "228"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sodium bicarbonate are required to react with 1 mole of ethanoic acid to form 1 mole of Sodium acetate, 1 mole of Water and 1 mole of Carbon dioxide"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Barium fluoride"}, {"role": "assistant", "content": "175"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 1 mole of Ammonium chloride and 1 mole of Sodium hydroxide"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 2 moles of Sodium hydroxide and 1 mole of Chlorine"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CH3COOH formed on combining 2 moles of CH3CH2OH and 2 moles of O2"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of Methane are required to react with 2 moles of Chlorine to form 1 mole of Dichloromethane along with 2 moles of Hydrochrolic acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O that is required to react with 2 moles of CO2 to form 2 moles of H2CO3"}, {"role": "assistant", "content": "36"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of CuCO3"}, {"role": "assistant", "content": "620"}]}
-{"messages": [{"role": "user", "content": "How much does 8 moles of Potassium Bromate weigh"}, {"role": "assistant", "content": "1344"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of NaClO weigh"}, {"role": "assistant", "content": "740"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 2 moles of Sulfuric acid to form 2 moles of Sodium bisulfate along with 2 moles of Water"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of Water are required to react with 2 moles of Carbon dioxide to form 2 moles of Carbonic acid"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in HClO2"}, {"role": "assistant", "content": "1.47"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2SO4 formed on combining 2 moles of SO3 and 2 moles of H2O"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Br in Calcium bromide"}, {"role": "assistant", "content": "80"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Chloroethane formed on combining 2 moles of Ethane and 2 moles of Chlorine"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of ethanoic acid are required to react with 3 moles of Sodium bicarbonate to form 3 moles of Sodium acetate, 3 moles of Water and 3 moles of Carbon dioxide"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Al, 1 P, and 4 O"}, {"role": "assistant", "content": "122"}]}
-{"messages": [{"role": "user", "content": "How many moles of H2O2 are required to react with 1 mole of SO2 to form 1 mole of H2SO4"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of Hydrogen are required to react with 6 moles of Carbon to form 3 moles of Ethane"}, {"role": "assistant", "content": "9"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in H2O"}, {"role": "assistant", "content": "88.89"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Hexachloroethane formed on combining 1 mole of Ethane and 6 moles of Chlorine"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of Water are required to react with 1 mole of Calcium oxide to form 1 mole of Calcium hydroxide"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of I in NH4I"}, {"role": "assistant", "content": "87.59"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CO2 formed on combining 1 mole of HNO3 and 1 mole of NaHCO3"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in Benzoic acid"}, {"role": "assistant", "content": "68.85"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Carbon tetrachloride"}, {"role": "assistant", "content": "152"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 3 moles of Ammonium chloride and 3 moles of Sodium hydroxide"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Ethane formed on combining 2 moles of Carbon and 3 moles of Hydrogen"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of BaI2"}, {"role": "assistant", "content": "391"}]}
-{"messages": [{"role": "user", "content": "How much does 5 moles of AlCl3 weigh"}, {"role": "assistant", "content": "660"}]}
-{"messages": [{"role": "user", "content": "The distance between two stations is 175 km. A train takes 35 hours to cover this distance. Calculate the speed of the train in km/hr."}, {"role": "assistant", "content": "5"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of CH3COOH and 2 moles of NaOH"}, {"role": "assistant", "content": "36"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 1 mole of Sodium bisulfite and 1 mole of Hydrochrolic acid"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "How many moles of NaCl are required to react with 2 moles of KNO3 to form 2 moles of NaNO3 along with 2 moles of KCl"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 8 moles of Citric acid"}, {"role": "assistant", "content": "1536"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 3 moles of Ammonium chloride and 3 moles of Sodium hydroxide"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Ammonium sulfate formed on combining 2 moles of Ammonia and 1 mole of Sulfuric acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium perchlorate  formed on combining 1 mole of Sodium hydroxide and 1 mole of Perchloric acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Iron and 3 Oxygen"}, {"role": "assistant", "content": "160"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of Dihydrogen monoxide weigh"}, {"role": "assistant", "content": "180"}]}
-{"messages": [{"role": "user", "content": "How many moles of H2O are required to react with 1 mole of NH4Cl to form 1 mole of HCl along with 1 mole of NH4OH"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of AgCl↓ formed on combining 1 mole of HCl and 1 mole of AgNO3"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of MgO are required to react with 3 moles of CO2 to form 3 moles of MgCO3"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Nitrogen and 4 Hydrogen"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Br in CaBr2"}, {"role": "assistant", "content": "80"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2 formed on combining 2 moles of Fe and 2 moles of H2SO4"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Ca(OH)2"}, {"role": "assistant", "content": "43.24"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 2 moles of Hydrochrolic acid to form 2 moles of Sodium chloride along with 2 moles of Water"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Sodium hydroxide and 1 mole of Perchloric acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How much does 9 moles of Fe2O3 weigh"}, {"role": "assistant", "content": "1440"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CO2 formed on combining 1 mole of C2H6 and 2 moles of O2"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium acetate formed on combining 3 moles of Sodium bicarbonate and 3 moles of ethanoic acid"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in Copper ii carbonate"}, {"role": "assistant", "content": "9.68"}]}
-{"messages": [{"role": "user", "content": "How many moles of CH4 are required to react with 3 moles of Cl2 to form 3 moles of CH3Cl along with 3 moles of HCl"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Ammonium chloride that is required to react with 2 moles of Sodium hydroxide to form 2 moles of Ammonia, 2 moles of Water and 2 moles of Sodium chloride"}, {"role": "assistant", "content": "106"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Barium hydroxide"}, {"role": "assistant", "content": "171"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Nitrogen and 5 Oxygen"}, {"role": "assistant", "content": "108"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Calcium iodide"}, {"role": "assistant", "content": "294"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of CaCO3"}, {"role": "assistant", "content": "100"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 9 moles of Aluminium sulfide"}, {"role": "assistant", "content": "1350"}]}
-{"messages": [{"role": "user", "content": "How many moles of CO2 are required to react with 6 moles of NH3 to form 3 moles of OC(NH2)2 along with 3 moles of H2O"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 1 mole of Acetic acid to form 1 mole of Sodium salt of acetic acid along with 1 mole of Water"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Barium and 2 Iodine"}, {"role": "assistant", "content": "391"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Ca in CaH2"}, {"role": "assistant", "content": "95.24"}]}
-{"messages": [{"role": "user", "content": "A bike travelled at an average speed of 7 m/s to cover a distance of 56 meters. What is the total duration of the journey?"}, {"role": "assistant", "content": "8"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in CCl4"}, {"role": "assistant", "content": "7.89"}]}
-{"messages": [{"role": "user", "content": "How many moles of H2O are required to react with 3 moles of Li3N to form 9 moles of LiOH along with 3 moles of NH3"}, {"role": "assistant", "content": "9"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of Bromic acid"}, {"role": "assistant", "content": "645"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Hydrogen formed on combining 3 moles of Sulfuric acid and 3 moles of Zinc"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Barium hydroxide"}, {"role": "assistant", "content": "18.71"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of C6H6"}, {"role": "assistant", "content": "78"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of CaH2 weigh"}, {"role": "assistant", "content": "420"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 3 moles of NaCl and 3 moles of HNO3"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Na, 1 Cl, and 1 O"}, {"role": "assistant", "content": "74"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in BaSO4"}, {"role": "assistant", "content": "27.47"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 1 mole of C5H12O and 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of N in N2O5"}, {"role": "assistant", "content": "25.93"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Barium chloride"}, {"role": "assistant", "content": "207"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Aluminum phosphate"}, {"role": "assistant", "content": "52.46"}]}
-{"messages": [{"role": "user", "content": "On a highway a car runs at an average speed of 5 mph. How much increase in speed is needed to cover 132 miles in 6 hours?"}, {"role": "assistant", "content": "17"}]}
-{"messages": [{"role": "user", "content": "On a highway a car runs at an average speed of 5 mph. How much increase in speed is needed to cover 45 miles in 3 hours?"}, {"role": "assistant", "content": "10"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of CaO"}, {"role": "assistant", "content": "56"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of CH4 and 4 moles of O2"}, {"role": "assistant", "content": "72"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 2 moles of Acetic acid and 2 moles of Sodium hydroxide"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Ammonium chloride that is required to react with 3 moles of Sodium hydroxide to form 3 moles of Ammonia, 3 moles of Water and 3 moles of Sodium chloride"}, {"role": "assistant", "content": "159"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CO2 formed on combining 6 moles of HCl and 3 moles of CaCO3"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of NaOH are required to react with 2 moles of HCH3CO2 to form 2 moles of NaCH3CO2 along with 2 moles of H2O"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in C6H6"}, {"role": "assistant", "content": "7.69"}]}
-{"messages": [{"role": "user", "content": "How much does 4 moles of N2O5 weigh"}, {"role": "assistant", "content": "432"}]}
-{"messages": [{"role": "user", "content": "How many moles of Ammonia are required to react with 1 mole of Carbon dioxide to form 1 mole of Urea along with 1 mole of Water"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Al in Aluminium hydroxide"}, {"role": "assistant", "content": "34.62"}]}
-{"messages": [{"role": "user", "content": "How many moles of Nitric acid are required to react with 2 moles of Ammonia to form 2 moles of Ammonium nitrate"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in C6H8O6"}, {"role": "assistant", "content": "54.55"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of NH3 formed on combining 3 moles of NH4NO3 and 3 moles of NaOH"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 2 moles of CH4 and 4 moles of O2"}, {"role": "assistant", "content": "4"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Hydrochrolic acid and 1 mole of Potassium hydroxide"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of NaCl formed on combining 2 moles of NaOH and 2 moles of HCl"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Angel decided to cycle to his friend’s house at a speed of 31 km/h and the journey took 2 hours. How far did Angel cycle?"}, {"role": "assistant", "content": "62"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of Ba(OH)2"}, {"role": "assistant", "content": "855"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Aluminium, 3 Carbon, and 9 Oxygen"}, {"role": "assistant", "content": "234"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2CO3 formed on combining 3 moles of CO2 and 3 moles of H2O"}, {"role": "assistant", "content": "186"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of NaOH and 1 mole of Cl2"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "The distance between two stations is 132 km. A train takes 33 hours to cover this distance. Calculate the speed of the train in km/hr."}, {"role": "assistant", "content": "4"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 2 moles of Sodium hydroxide and 2 moles of Hydrochrolic acid"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 1 mole of NaOH and 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Excluding stoppages, the speed of a bus is 100 kmph and including stoppages, it is 73 kmph. For how many minutes does the bus stop per hour?"}, {"role": "assistant", "content": "16.2"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 4 moles of Potassium Bromate"}, {"role": "assistant", "content": "672"}]}
-{"messages": [{"role": "user", "content": "A train traveling at 72 kmph crosses a man in 16 seconds. What is the length of the train in meters?"}, {"role": "assistant", "content": "320"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Br in NH4Br"}, {"role": "assistant", "content": "81.63"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Vinyl alcohol formed on combining 1 mole of Ethane and 1 mole of Oxygen"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in NaClO"}, {"role": "assistant", "content": "21.62"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Citric acid"}, {"role": "assistant", "content": "58.33"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in C4H8O2"}, {"role": "assistant", "content": "36.36"}]}
-{"messages": [{"role": "user", "content": "How many moles of CH4 are required to react with 3 moles of Br2 to form 3 moles of CH3Br along with 3 moles of HBr"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Aluminum chloride"}, {"role": "assistant", "content": "132"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in C7H6O2"}, {"role": "assistant", "content": "4.92"}]}
-{"messages": [{"role": "user", "content": "How much does 6 moles of C6H6 weigh"}, {"role": "assistant", "content": "468"}]}
-{"messages": [{"role": "user", "content": "How many moles of CO2 are required to react with 2 moles of H2O to form 2 moles of H2CO3"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in CH3COOH"}, {"role": "assistant", "content": "40"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of H3BO3"}, {"role": "assistant", "content": "62"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 6 moles of C3H6O"}, {"role": "assistant", "content": "348"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of I in Barium iodide"}, {"role": "assistant", "content": "64.96"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in H2CrO4"}, {"role": "assistant", "content": "54.24"}]}
-{"messages": [{"role": "user", "content": "How much does 3 moles of Calcium hydride weigh"}, {"role": "assistant", "content": "126"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Hydrogen and 1 Oxygen"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of MgCO3 formed on combining 1 mole of MgO and 1 mole of CO2"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Acetic acid"}, {"role": "assistant", "content": "53.33"}]}
-{"messages": [{"role": "user", "content": "How many moles of NaOH are required to react with 2 moles of HCl to form 2 moles of NaCl along with 2 moles of H2O"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Copper ii carbonate"}, {"role": "assistant", "content": "124"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of Dinitrogen pentoxide weigh"}, {"role": "assistant", "content": "1080"}]}
-{"messages": [{"role": "user", "content": "How many moles of AgNO3 are required to react with 3 moles of NaOH to form 3 moles of AgOH along with 3 moles of NaNO3"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of H2SO4 are required to react with 3 moles of KOH to form 3 moles of KHSO4 along with 3 moles of H2O"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 1 mole of CH4 and 3 moles of Cl2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Cr in Chromic acid"}, {"role": "assistant", "content": "44.07"}]}
-{"messages": [{"role": "user", "content": "How many moles of O2 are required to react with 1 mole of CH4 to form 1 mole of CO2 along with 2 moles of H2O"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of H2SO4 are required to react with 6 moles of NH3 to form 3 moles of (NH4)2SO4"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of H2O are required to react with 2 moles of NaH to form 2 moles of NaOH along with 2 moles of H2"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How much does 3 moles of Bleach weigh"}, {"role": "assistant", "content": "222"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 9 moles of Chromic acid"}, {"role": "assistant", "content": "1062"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 3 moles of Ethane and 3 moles of Oxygen"}, {"role": "assistant", "content": "54"}]}
-{"messages": [{"role": "user", "content": "How many moles of Hydrogen are required to react with 3 moles of Ethene to form 3 moles of Ethane"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of C in Ascorbic acid"}, {"role": "assistant", "content": "40.91"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 N and 3 O"}, {"role": "assistant", "content": "76"}]}
-{"messages": [{"role": "user", "content": "Calculate molecular weight of Bromic acid"}, {"role": "assistant", "content": "129"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium nitrate formed on combining 1 mole of Sodium chloride and 1 mole of Nitric acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of NH3 formed on combining 2 moles of Li3N and 6 moles of H2O"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in CaCO3"}, {"role": "assistant", "content": "48"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Ca(OH)2 that is required to react with 1 mole of CO2 to form 1 mole of CaCO3↓ along with 1 mole of H2O"}, {"role": "assistant", "content": "74"}]}
+{"messages": [{"role": "user", "content": "How many moles of Potassium hydroxide are required to react with 1 mole of Hydrochrolic acid to form 1 mole of Water along with 1 mole of Potassium chloride"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Cu(CN)2 formed on combining 2 moles of HCN and 1 mole of CuSO4"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaCl formed on combining 2 moles of NH4Cl and 2 moles of NaOH"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "How many moles of HCl are required to react with 2 moles of NaOH to form 2 moles of NaCl along with 2 moles of H2O"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Ba in BaCl2"}, {"role": "assistant", "content": "66.18"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 4 C, 1 H, and 1 O"}, {"role": "assistant", "content": "65"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 1 mole of Phosphoric acid to form 1 mole of Sodium dihydrogen phosphate along with 1 mole of Water"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Magnesium are required to react with 1 mole of Carbon dioxide to form 2 moles of Magnesium oxide along with 1 mole of Carbon"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "How many moles of Water are required to react with 1 mole of Carbon dioxide to form 1 mole of Carbonic acid"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Hydrochrolic acid formed on combining 3 moles of Sulfuric acid and 3 moles of Sodium chloride"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find molecular weight of HClO2"}, {"role": "assistant", "content": "68"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 6 C, 8 H, and 7 O"}, {"role": "assistant", "content": "192"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of NH4Br"}, {"role": "assistant", "content": "490"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sulfuric acid are required to react with 4 moles of Ammonia to form 2 moles of Ammonium sulfate"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 4 moles of Hydrochrolic acid and 2 moles of Calcium carbonate"}, {"role": "assistant", "content": "36"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Calcium carbonate formed on combining 3 moles of Calcium hydroxide and 3 moles of Carbon dioxide"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How much time will it take for a man to travel 78 meters across the floor if he is traveling at 2 m/s?"}, {"role": "assistant", "content": "39"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Ca(OH)2 formed on combining 1 mole of CaO and 1 mole of H2O"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of H2CO3"}, {"role": "assistant", "content": "310"}]}
+{"messages": [{"role": "user", "content": "How many moles of NaHCO3 are required to react with 3 moles of HCl to form 3 moles of H2O, 3 moles of CO2 and 3 moles of NaCl"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of CH3CH2OH and 2 moles of O2"}, {"role": "assistant", "content": "36"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Potassium hydroxide and 1 mole of Ammonium iodide"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cl in Barium chloride"}, {"role": "assistant", "content": "33.82"}]}
+{"messages": [{"role": "user", "content": "How many moles of HCl are required to react with 3 moles of NaHCO3 to form 3 moles of H2O, 3 moles of CO2 and 3 moles of NaCl"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cl in NaClO"}, {"role": "assistant", "content": "47.3"}]}
+{"messages": [{"role": "user", "content": "How much does 9 moles of NH4I weigh"}, {"role": "assistant", "content": "1305"}]}
+{"messages": [{"role": "user", "content": "How much does 5 moles of Barium iodide weigh"}, {"role": "assistant", "content": "1955"}]}
+{"messages": [{"role": "user", "content": "How much does 9 moles of Ammonium iodide weigh"}, {"role": "assistant", "content": "1305"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of H in Calcium hydride"}, {"role": "assistant", "content": "4.76"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cl in Carbon tetrachloride"}, {"role": "assistant", "content": "92.11"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Aluminum phosphate"}, {"role": "assistant", "content": "122"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Al in Aluminium sulfide"}, {"role": "assistant", "content": "36"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaCH3CO2 formed on combining 3 moles of HCH3CO2 and 3 moles of NaOH"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Dinitrogen pentoxide"}, {"role": "assistant", "content": "108"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of O in Chromic acid"}, {"role": "assistant", "content": "54.24"}]}
+{"messages": [{"role": "user", "content": "How many moles of Carbon dioxide are required to react with 1 mole of Calcium hydroxide to form 1 mole of Calcium carbonate along with 1 mole of Water"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 1 mole of HCH3CO2 and 1 mole of NaOH"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of CH3COOH are required to react with 1 mole of NaOH to form 1 mole of NaCH3COO along with 1 mole of H2O"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Potassium hydroxide are required to react with 1 mole of Ammonium chloride to form 1 mole of Ammonia, 1 mole of Water and 1 mole of Potassium chloride"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 9 moles of Carbon tetrachloride"}, {"role": "assistant", "content": "1368"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of CH4 formed on combining 3 moles of Be2C and 12 moles of H2O"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Cl2 are required to react with 6 moles of NaOH to form 3 moles of NaClO, 3 moles of NaCl and 3 moles of H2O"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of KCl formed on combining 2 moles of NaCl and 2 moles of KNO3"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "How many moles of Chlorine are required to react with 2 moles of Sodium hydroxide to form 1 mole of Sodium hypochlorite, 1 mole of Sodium chloride and 1 mole of Water"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Mg are required to react with 3 moles of CO2 to form 6 moles of MgO along with 3 moles of C"}, {"role": "assistant", "content": "6"}]}
+{"messages": [{"role": "user", "content": "How many moles of Hydrochrolic acid are required to react with 2 moles of Potassium hydroxide to form 2 moles of Water along with 2 moles of Potassium chloride"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the distance covered by a bike moving at a constant speed of 4 m/s in 8 seconds."}, {"role": "assistant", "content": "32"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Aluminium hydroxide"}, {"role": "assistant", "content": "78"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 4 moles of Butane"}, {"role": "assistant", "content": "260"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of C in Citric acid"}, {"role": "assistant", "content": "37.5"}]}
+{"messages": [{"role": "user", "content": "How much does 6 moles of Ascorbic acid weigh"}, {"role": "assistant", "content": "1056"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of O in Dinitrogen pentoxide"}, {"role": "assistant", "content": "74.07"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 2 moles of C2H6 and 2 moles of Cl2"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find molecular weight of AlBr3"}, {"role": "assistant", "content": "267"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sodium bicarbonate are required to react with 1 mole of Hydrochrolic acid to form 1 mole of Water, 1 mole of Carbon dioxide and 1 mole of Sodium chloride"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Ammonium nitrate  are required to react with 3 moles of Sodium hydroxide to form 3 moles of Sodium nitrate, 3 moles of Ammonia and 3 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaNO3 formed on combining 2 moles of NaCl and 2 moles of HNO3"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Al in Aluminum phosphate"}, {"role": "assistant", "content": "22.13"}]}
+{"messages": [{"role": "user", "content": "Dominic lives 184 miles away from his shop. His one way journey takes 8 hours. Find the average speed."}, {"role": "assistant", "content": "23"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sodium bicarbonate are required to react with 3 moles of Hydrochrolic acid to form 3 moles of Water, 3 moles of Carbon dioxide and 3 moles of Sodium chloride"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Cupric Cyanide formed on combining 4 moles of formonitrile and 2 moles of Copper(II) sulfate"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Carbon dioxide formed on combining 6 moles of Hydrochrolic acid and 3 moles of Calcium carbonate"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 3 moles of C6H8O6"}, {"role": "assistant", "content": "528"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Aluminum carbonate"}, {"role": "assistant", "content": "234"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Copper, 1 Carbon, and 3 Oxygen"}, {"role": "assistant", "content": "124"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of C2H4O formed on combining 1 mole of C2H6 and 1 mole of O2"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 3 moles of Ammonium chloride and 3 moles of Sodium hydroxide"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cr in Dichromate"}, {"role": "assistant", "content": "35.14"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Ammonia formed on combining 3 moles of Lithium nitride and 9 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Hydrochrolic acid are required to react with 3 moles of Ammonia to form 3 moles of Ammonium chloride"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaHSO4 formed on combining 3 moles of NaOH and 3 moles of H2SO4"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Methane and 2 moles of Oxygen"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Sulfuric acid formed on combining 2 moles of Sulfur dioxide and 2 moles of Hydrogen peroxide"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 2 moles of CH3COOH and 2 moles of NaOH"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NH4Cl formed on combining 1 mole of NH3 and 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of C2H2 are required to react with 6 moles of H2 to form 3 moles of C2H6"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of H2O are required to react with 2 moles of CO2 to form 2 moles of H2CO3"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 9 moles of Acetone"}, {"role": "assistant", "content": "522"}]}
 {"messages": [{"role": "user", "content": "Excluding stoppages, the speed of a bus is 80 kmph and including stoppages, it is 53 kmph. For how many minutes does the bus stop per hour?"}, {"role": "assistant", "content": "20.25"}]}
-{"messages": [{"role": "user", "content": "How much does 4 moles of Chlorous acid weigh"}, {"role": "assistant", "content": "272"}]}
-{"messages": [{"role": "user", "content": "Find the amount of CCl4 formed on combining 3 moles of CH4 and 12 moles of Cl2"}, {"role": "assistant", "content": "456"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sulfuric acid are required to react with 2 moles of Iron to form 2 moles of Iron (II) sulfate along with 2 moles of Hydrogen"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of BaI2"}, {"role": "assistant", "content": "1955"}]}
-{"messages": [{"role": "user", "content": "How many moles of Carbon dioxide are required to react with 2 moles of Magnesium oxide to form 2 moles of Magnesium carbonate"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Hydrogen formed on combining 1 mole of Ethane and 2 moles of Oxygen"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 2 moles of Ammonium chloride and 2 moles of Potassium hydroxide"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 1 mole of NaOH and 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in Aluminium hydroxide"}, {"role": "assistant", "content": "61.54"}]}
-{"messages": [{"role": "user", "content": "How many moles of Magnesium are required to react with 1 mole of Sulfuric acid to form 1 mole of Magnesium sulfate along with 1 mole of Hydrogen"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CH2Cl2 formed on combining 3 moles of CH4 and 6 moles of Cl2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "How many moles of Potassium iodide are required to react with 3 moles of Sodium chloride to form 3 moles of Potassium chloride along with 3 moles of Sodium iodide"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "A train traveling at 90 kmph crosses a man in 10 seconds. What is the length of the train in meters?"}, {"role": "assistant", "content": "250"}]}
-{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 3 moles of KOH and 3 moles of H2SO4"}, {"role": "assistant", "content": "54"}]}
-{"messages": [{"role": "user", "content": "How much does 10 moles of Aluminum fluoride weigh"}, {"role": "assistant", "content": "840"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Br in BaBr2"}, {"role": "assistant", "content": "53.87"}]}
-{"messages": [{"role": "user", "content": "How many moles of BaO are required to react with 3 moles of H2O to form 3 moles of Ba(OH)2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Water that is required to react with 3 moles of Sulfur trioxide to form 3 moles of Sulfuric acid"}, {"role": "assistant", "content": "54"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in Citric acid"}, {"role": "assistant", "content": "4.17"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium nitrate formed on combining 1 mole of Ammonium nitrate  and 1 mole of Sodium hydroxide"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "A cyclist covers a distance of 36 meters in 9 seconds. Calculate his speed."}, {"role": "assistant", "content": "4"}]}
-{"messages": [{"role": "user", "content": "How much does 5 moles of H2O weigh"}, {"role": "assistant", "content": "90"}]}
-{"messages": [{"role": "user", "content": "How many moles of CaO are required to react with 2 moles of H2O to form 2 moles of Ca(OH)2"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "The distance between two stations is 30 km. A train takes 15 hours to cover this distance. Calculate the speed of the train in km/hr."}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 7 moles of CO"}, {"role": "assistant", "content": "196"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Nitrogen and 1 Oxygen"}, {"role": "assistant", "content": "44"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 8 moles of H2CrO4"}, {"role": "assistant", "content": "944"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of H2 formed on combining 2 moles of Mg and 2 moles of H2SO4"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 2 moles of C2H6 and 12 moles of Cl2"}, {"role": "assistant", "content": "12"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Ba, 2 O, and 2 H"}, {"role": "assistant", "content": "171"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Hydrochrolic acid formed on combining 3 moles of Methane and 9 moles of Chlorine"}, {"role": "assistant", "content": "9"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of N in Ammonium chloride"}, {"role": "assistant", "content": "26.42"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 2 moles of Hydrochrolic acid and 2 moles of Sodium bicarbonate"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of O in CuCO3"}, {"role": "assistant", "content": "38.71"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of Ammonia"}, {"role": "assistant", "content": "90"}]}
-{"messages": [{"role": "user", "content": "How many moles of Carbon are required to react with 2 moles of Hydrogen to form 1 mole of Methane"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of Sulfuric acid are required to react with 1 mole of Potassium hydroxide to form 1 mole of Potassium bisulfate along with 1 mole of Water"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of C2H6 are required to react with 6 moles of O2 to form 6 moles of CO2 along with 9 moles of H2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Ammonium chloride formed on combining 1 mole of Ammonia and 1 mole of Hydrochrolic acid"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 2 moles of Sodium hydroxide and 2 moles of Hydrochrolic acid"}, {"role": "assistant", "content": "36"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of I in AlI3"}, {"role": "assistant", "content": "93.38"}]}
-{"messages": [{"role": "user", "content": "How many moles of Ammonia are required to react with 1 mole of Nitric acid to form 1 mole of Ammonium nitrate"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Ca and 1 O"}, {"role": "assistant", "content": "56"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Barium, 1 Sulphur, and 4 Oxygen"}, {"role": "assistant", "content": "233"}]}
+{"messages": [{"role": "user", "content": "Find the amount of NaClO formed on combining 6 moles of NaOH and 3 moles of Cl2"}, {"role": "assistant", "content": "222"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 4 moles of Benzene"}, {"role": "assistant", "content": "312"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 7 moles of AlF3"}, {"role": "assistant", "content": "588"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Barium and 1 Oxygen"}, {"role": "assistant", "content": "153"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 H, 1 C, and 3 O"}, {"role": "assistant", "content": "62"}]}
+{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 6 moles of Hydrochrolic acid and 3 moles of Calcium carbonate"}, {"role": "assistant", "content": "54"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Al in Al2O3"}, {"role": "assistant", "content": "52.94"}]}
+{"messages": [{"role": "user", "content": "How many moles of CO2 are required to react with 3 moles of H2O to form 3 moles of H2CO3"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of O in Dihydrogen monoxide"}, {"role": "assistant", "content": "88.89"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 9 moles of C7H6O2"}, {"role": "assistant", "content": "1098"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Acetone"}, {"role": "assistant", "content": "58"}]}
 {"messages": [{"role": "user", "content": "Find molecular weight of Al2S3"}, {"role": "assistant", "content": "150"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 2 moles of C2H6 and 14 moles of Cl2"}, {"role": "assistant", "content": "12"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 3 moles of H2O and 3 moles of NH4Cl"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Ca, 1 C, and 3 O"}, {"role": "assistant", "content": "100"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of K2Cr2O7"}, {"role": "assistant", "content": "296"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Al in Aluminum fluoride"}, {"role": "assistant", "content": "32.14"}]}
+{"messages": [{"role": "user", "content": "A bike covers 324 meters in 18 seconds. If car's speed is 5 times of the car. Find the distance covered by the bike in 8 seconds"}, {"role": "assistant", "content": "720"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 K, 2 Cr, and 7 O"}, {"role": "assistant", "content": "296"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of C in Butanoic acid"}, {"role": "assistant", "content": "54.55"}]}
+{"messages": [{"role": "user", "content": "Find the amount of CaO that is required to react with 2 moles of H2O to form 2 moles of Ca(OH)2"}, {"role": "assistant", "content": "112"}]}
+{"messages": [{"role": "user", "content": "If a car travels 69 m in 3 seconds how fast is it going?"}, {"role": "assistant", "content": "23"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of O in Benzoic acid"}, {"role": "assistant", "content": "26.23"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of B in Boric acid"}, {"role": "assistant", "content": "17.74"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 3 moles of Ascorbic acid"}, {"role": "assistant", "content": "528"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of K in KBrO3"}, {"role": "assistant", "content": "23.81"}]}
+{"messages": [{"role": "user", "content": "Find molecular weight of CH3COOH"}, {"role": "assistant", "content": "60"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of KI formed on combining 1 mole of KOH and 1 mole of NH4I"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Ammonia are required to react with 2 moles of Sulfuric acid to form 2 moles of Ammonium sulfate"}, {"role": "assistant", "content": "4"}]}
+{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of HCl and 1 mole of CaCO3"}, {"role": "assistant", "content": "18"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaCl formed on combining 3 moles of NaOH and 3 moles of HCl"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Aluminium and 3 Iodine"}, {"role": "assistant", "content": "408"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 7 moles of CaO"}, {"role": "assistant", "content": "392"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 3 moles of Hydrochrolic acid to form 3 moles of Sodium chloride along with 3 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of HCl are required to react with 1 mole of NH3 to form 1 mole of NH4Cl"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Urea formed on combining 1 mole of Carbon dioxide and 2 moles of Ammonia"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 4 moles of Hydrochrolic acid and 2 moles of Calcium carbonate"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of H2 formed on combining 3 moles of CH4 and 3 moles of C6H6"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 6 moles of Calcium hydride"}, {"role": "assistant", "content": "252"}]}
+{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 3 moles of Sulfuric acid and 6 moles of Sodium hydroxide"}, {"role": "assistant", "content": "108"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Sodium salt of acetic acid formed on combining 3 moles of Acetic acid and 3 moles of Sodium hydroxide"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of O in Dinitrogen trioxide"}, {"role": "assistant", "content": "63.16"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 8 moles of Carbonic acid"}, {"role": "assistant", "content": "496"}]}
+{"messages": [{"role": "user", "content": "How many moles of Benzene are required to react with 2 moles of Methane to form 2 moles of Toluene along with 2 moles of Hydrogen"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Claire rides his car with a constant speed of 53 km/h. How long will he take to travel a distance of 2067 kilometers?"}, {"role": "assistant", "content": "39"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 3 moles of Ethane and 3 moles of Oxygen"}, {"role": "assistant", "content": "3"}]}
 {"messages": [{"role": "user", "content": "Find the mass percentage of Br in AlBr3"}, {"role": "assistant", "content": "89.89"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium dihydrogen phosphate formed on combining 2 moles of Phosphoric acid and 2 moles of Sodium hydroxide"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Ca in CaI2"}, {"role": "assistant", "content": "13.61"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of KCl formed on combining 3 moles of KI and 3 moles of NaCl"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of NaC2H3O2 formed on combining 3 moles of NaHCO3 and 3 moles of HC2H3O2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of CCl4 formed on combining 3 moles of CH4 and 12 moles of Cl2"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of Ba in BaF2"}, {"role": "assistant", "content": "78.29"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 3 moles of Hydrochrolic acid and 3 moles of Sodium bicarbonate"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "A cyclist covers a distance of 56 meters in 8 seconds. Calculate his speed."}, {"role": "assistant", "content": "7"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Sodium, 1 Chlorine, and 1 Oxygen"}, {"role": "assistant", "content": "74"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of HNO3 formed on combining 3 moles of HCl and 3 moles of AgNO3"}, {"role": "assistant", "content": "3"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in NH4I"}, {"role": "assistant", "content": "2.76"}]}
-{"messages": [{"role": "user", "content": "How much does 4 moles of CH3COOH weigh"}, {"role": "assistant", "content": "240"}]}
-{"messages": [{"role": "user", "content": "How many moles of Ethene are required to react with 1 mole of Hydrogen to form 1 mole of Ethane"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "How many moles of NaHCO3 are required to react with 1 mole of HCl to form 1 mole of H2O, 1 mole of CO2 and 1 mole of NaCl"}, {"role": "assistant", "content": "1"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in NH4Br"}, {"role": "assistant", "content": "4.08"}]}
-{"messages": [{"role": "user", "content": "Find the mass percentage of H in Calcium hydroxide"}, {"role": "assistant", "content": "2.7"}]}
-{"messages": [{"role": "user", "content": "Find molecular weight of NH4"}, {"role": "assistant", "content": "18"}]}
-{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Nitrogen, 4 Hydrogen, and 1 Chlorine"}, {"role": "assistant", "content": "53"}]}
-{"messages": [{"role": "user", "content": "Find the number of moles of Sodium nitrate formed on combining 2 moles of Nitric acid and 2 moles of Sodium bicarbonate"}, {"role": "assistant", "content": "2"}]}
-{"messages": [{"role": "user", "content": "How many moles of HNO3 are required to react with 3 moles of NaCl to form 3 moles of NaNO3 along with 3 moles of HCl"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cl in Ammonium chloride"}, {"role": "assistant", "content": "66.04"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Dichromate"}, {"role": "assistant", "content": "296"}]}
+{"messages": [{"role": "user", "content": "How many moles of CH4 are required to react with 9 moles of Cl2 to form 3 moles of CHCl3 along with 9 moles of HCl"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of H in CaH2"}, {"role": "assistant", "content": "4.76"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cr in K2Cr2O7"}, {"role": "assistant", "content": "35.14"}]}
+{"messages": [{"role": "user", "content": "Find molecular weight of BaCl2"}, {"role": "assistant", "content": "207"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Ca in Calcium hydroxide"}, {"role": "assistant", "content": "54.05"}]}
+{"messages": [{"role": "user", "content": "How much does 8 moles of BaSO4 weigh"}, {"role": "assistant", "content": "1864"}]}
+{"messages": [{"role": "user", "content": "How much does 3 moles of C6H8O7 weigh"}, {"role": "assistant", "content": "576"}]}
+{"messages": [{"role": "user", "content": "How many moles of NaOH are required to react with 1 mole of AgNO3 to form 1 mole of AgOH along with 1 mole of NaNO3"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How much does 10 moles of Iron oxide weigh"}, {"role": "assistant", "content": "1600"}]}
+{"messages": [{"role": "user", "content": "Find the amount of H2O that is required to react with 1 mole of NH4Cl to form 1 mole of HCl along with 1 mole of NH4OH"}, {"role": "assistant", "content": "18"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Chloroethane formed on combining 1 mole of Ethane and 1 mole of Chlorine"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Sodium hydroxide formed on combining 3 moles of Sodium hydride  and 3 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Aluminum iodide"}, {"role": "assistant", "content": "408"}]}
+{"messages": [{"role": "user", "content": "How many moles of HCl are required to react with 3 moles of NaOH to form 3 moles of NaCl along with 3 moles of H2O"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Aluminium sulfide"}, {"role": "assistant", "content": "150"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Sodium hydroxide and 1 mole of Hydrochrolic acid"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Walking at the rate of 9 kmph a man cover certain distance in 8 hours. In how many hours will the man running at a speed of 36 kmph cover the same distance?"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Al in AlCl3"}, {"role": "assistant", "content": "20.45"}]}
+{"messages": [{"role": "user", "content": "If a bike travels 350 m in 7 seconds how fast is it going?"}, {"role": "assistant", "content": "50"}]}
+{"messages": [{"role": "user", "content": "If a bus travels 201 m in 3 seconds how fast is it going?"}, {"role": "assistant", "content": "67"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Sodium nitrate formed on combining 1 mole of Ammonium nitrate  and 1 mole of Sodium hydroxide"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of CH4 and 4 moles of O2"}, {"role": "assistant", "content": "72"}]}
+{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 1 mole of Sodium hydroxide and 1 mole of Hydrochrolic acid"}, {"role": "assistant", "content": "18"}]}
+{"messages": [{"role": "user", "content": "Find the amount of NH4Cl formed on combining 1 mole of NH3 and 1 mole of HCl"}, {"role": "assistant", "content": "53"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of Ammonium bromide"}, {"role": "assistant", "content": "490"}]}
+{"messages": [{"role": "user", "content": "How many moles of Cl2 are required to react with 1 mole of C2H6 to form 1 mole of C2H5Cl along with 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find molecular weight of C4H8O2"}, {"role": "assistant", "content": "88"}]}
+{"messages": [{"role": "user", "content": "Find the amount of Water formed on combining 2 moles of Phosphoric acid and 2 moles of Sodium hydroxide"}, {"role": "assistant", "content": "36"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sodium bicarbonate are required to react with 1 mole of Nitric acid to form 1 mole of Sodium nitrate, 1 mole of Carbon dioxide and 1 mole of Water"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 7 C, 6 H, and 2 O"}, {"role": "assistant", "content": "122"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Silver Hydroxide formed on combining 2 moles of Silver nitrate and 2 moles of Sodium hydroxide"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Calcium chloride formed on combining 4 moles of Hydrochrolic acid and 2 moles of Calcium carbonate"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of P in Aluminum phosphate"}, {"role": "assistant", "content": "25.41"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 1 Hydrogen, 1 Bromine, and 3 Oxygen"}, {"role": "assistant", "content": "129"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Calcium hydroxide"}, {"role": "assistant", "content": "74"}]}
+{"messages": [{"role": "user", "content": "How many moles of Zn are required to react with 2 moles of H2SO4 to form 2 moles of ZnSO4 along with 2 moles of H2"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of 5 moles of Aluminum carbonate"}, {"role": "assistant", "content": "1170"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 H and 1 O"}, {"role": "assistant", "content": "18"}]}
+{"messages": [{"role": "user", "content": "How many moles of Carbon dioxide are required to react with 6 moles of Ammonia to form 3 moles of Urea along with 3 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Oxygen are required to react with 1 mole of Ethane to form 2 moles of Carbon dioxide along with 3 moles of Hydrogen"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of H in Ca(OH)2"}, {"role": "assistant", "content": "2.7"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 1 mole of Sodium bisulfite and 1 mole of Hydrochrolic acid"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Calculate molecular weight of Chromic acid"}, {"role": "assistant", "content": "118"}]}
+{"messages": [{"role": "user", "content": "How many moles of CaCO3 are required to react with 6 moles of HCl to form 3 moles of CaCl2, 3 moles of CO2 and 3 moles of H2O"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "What is the molecular weight of a compound having 2 Aluminium and 3 Sulphur"}, {"role": "assistant", "content": "150"}]}
+{"messages": [{"role": "user", "content": "How much does 9 moles of BaBr2 weigh"}, {"role": "assistant", "content": "2673"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Br in KBrO3"}, {"role": "assistant", "content": "47.62"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 2 moles of Calcium hydroxide and 2 moles of Carbon dioxide"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the amount of CH3COOH formed on combining 2 moles of CH3CH2OH and 2 moles of O2"}, {"role": "assistant", "content": "120"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Al in AlBr3"}, {"role": "assistant", "content": "10.11"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of H2O formed on combining 2 moles of CH3CH2OH and 2 moles of O2"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaCl formed on combining 3 moles of HCl and 3 moles of NaHCO3"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Water are required to react with 2 moles of Ammonium chloride to form 2 moles of Hydrochrolic acid along with 2 moles of Ammonium hydroxide"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 3 moles of C2H6 and 3 moles of O2"}, {"role": "assistant", "content": "54"}]}
+{"messages": [{"role": "user", "content": "How many moles of Barium oxide are required to react with 2 moles of Water to form 2 moles of Barium hydroxide"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Cl in HClO2"}, {"role": "assistant", "content": "51.47"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of Al in AlBr3"}, {"role": "assistant", "content": "10.11"}]}
+{"messages": [{"role": "user", "content": "A train is going at 1/6 of its usual speed and it takes an extra 10 minutes to reach its destination. Find its usual time to cover the same distance."}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Sodium chloride formed on combining 1 mole of Hydrochrolic acid and 1 mole of Sodium bicarbonate"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of NaCl are required to react with 3 moles of HNO3 to form 3 moles of NaNO3 along with 3 moles of HCl"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Water are required to react with 3 moles of Barium oxide to form 3 moles of Barium hydroxide"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the amount of H2O formed on combining 2 moles of NaOH and 2 moles of H2SO4"}, {"role": "assistant", "content": "36"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of NaCl formed on combining 1 mole of NaOH and 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Sodium hydroxide are required to react with 3 moles of Sulfuric acid to form 3 moles of Sodium bisulfate along with 3 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Ammonium iodide are required to react with 3 moles of Potassium hydroxide to form 3 moles of Ammonia, 3 moles of Potassium iodide and 3 moles of Water"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How much does 5 moles of Al2(CO3)3 weigh"}, {"role": "assistant", "content": "1170"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Sodium bisulfate formed on combining 3 moles of Sodium hydroxide and 3 moles of Sulfuric acid"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of Calcium oxide are required to react with 3 moles of Water to form 3 moles of Calcium hydroxide"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of Water formed on combining 2 moles of Sodium hydroxide and 2 moles of Hydrochrolic acid"}, {"role": "assistant", "content": "2"}]}
+{"messages": [{"role": "user", "content": "How many moles of Cl2 are required to react with 1 mole of C2H6 to form 1 mole of C2H5Cl along with 1 mole of HCl"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "Find the number of moles of HCl formed on combining 1 mole of CH4 and 4 moles of Cl2"}, {"role": "assistant", "content": "4"}]}
+{"messages": [{"role": "user", "content": "Find the mass percentage of C in Carbon tetrachloride"}, {"role": "assistant", "content": "7.89"}]}
+{"messages": [{"role": "user", "content": "How many moles of CuSO4 are required to react with 6 moles of HCN to form 3 moles of H2SO4 along with 3 moles of Cu(CN)2"}, {"role": "assistant", "content": "3"}]}
+{"messages": [{"role": "user", "content": "How many moles of NaCl are required to react with 1 mole of H2SO4 to form 1 mole of HCl along with 1 mole of NaHSO4"}, {"role": "assistant", "content": "1"}]}
+{"messages": [{"role": "user", "content": "How many moles of Oxygen are required to react with 1 mole of Methane to form 1 mole of Carbon dioxide along with 2 moles of Water"}, {"role": "assistant", "content": "2"}]}

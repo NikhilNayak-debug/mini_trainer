@@ -81,7 +81,7 @@ def evaluate_dataset(dataset_name, test_file, model, tokenizer):
     print(f"{'='*50}")
 
     # Load test data
-    test_data = load_test_data(test_file, max_samples=100)
+    test_data = load_test_data(test_file)
     prompts = [item['prompt'] for item in test_data]
     ground_truths = [item['ground_truth'] for item in test_data]
 
@@ -120,7 +120,7 @@ def main():
 
     # Model path (temporarily using base model for testing)
     # model_path = "meta-llama/Llama-2-7b-chat-hf"
-    model_path = "/workspace/mini_trainer/trace_outputs/sft_step3_meetingbank/hf_format/samples_3948.0"
+    model_path = "/workspace/mini_trainer/trace_outputs/OSFT_fixed/hf_format/samples_2500.0"
     print(f"📂 Model: {model_path}")
 
     # Check if model exists (skip check for HF models)
@@ -146,12 +146,12 @@ def main():
     # Test datasets to evaluate (for testing, using only NumGLUE-cm)
     datasets = [
         ("C-STANCE", "/workspace/mini_trainer/trace_datasets/converted/C-STANCE_test.jsonl"),
-        ("FOMC", "/workspace/mini_trainer/trace_datasets/converted/FOMC_test.jsonl"),
-        ("MeetingBank", "/workspace/mini_trainer/trace_datasets/converted/MeetingBank_test.jsonl"),
-        # ("ScienceQA", "/workspace/mini_trainer/trace_datasets/converted/ScienceQA_test.jsonl"),
+        # ("FOMC", "/workspace/mini_trainer/trace_datasets/converted/FOMC_test.jsonl"),
+        # ("MeetingBank", "/workspace/mini_trainer/trace_datasets/converted/MeetingBank_test.jsonl"),
+        ("ScienceQA", "/workspace/mini_trainer/trace_datasets/converted/ScienceQA_test.jsonl"),
         ("NumGLUE-cm", "/workspace/mini_trainer/trace_datasets/converted/NumGLUE-cm_test.jsonl"),
         ("NumGLUE-ds", "/workspace/mini_trainer/trace_datasets/converted/NumGLUE-ds_test.jsonl"),
-        ("20Minuten", "/workspace/mini_trainer/trace_datasets/converted/20Minuten_test.jsonl"),
+        # ("20Minuten", "/workspace/mini_trainer/trace_datasets/converted/20Minuten_test.jsonl"),
     ]
 
     # Evaluate each dataset
@@ -170,7 +170,7 @@ def main():
         if 'accuracy' in results:
             accuracies.append(results['accuracy'])
         elif 'sari' in results:
-            accuracies.append(results['sari'])
+            accuracies.append(results['sari']/100)
         elif 'rouge-L' in results:
             accuracies.append(results['rouge-L'])
 
@@ -182,7 +182,7 @@ def main():
         print(f"📊 Average Performance: {avg_accuracy:.4f}")
         print(f"📝 Individual Results:")
         for dataset_name, results in all_results.items():
-            main_metric = results.get('accuracy', results.get('rouge-L', results.get('bleu-4', 'N/A')))
+            main_metric = results.get('accuracy', results.get('sari', results.get('rouge-L', 'N/A')))
             print(f"  {dataset_name}: {main_metric}")
         print(f"{'='*60}")
 

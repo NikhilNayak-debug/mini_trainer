@@ -36,14 +36,14 @@ torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
 torchrun --nnodes=1 --nproc-per-node=8 src/mini_trainer/train.py \
   --output-dir ./trace_outputs/osft_step3_meetingbank \
   --data-path ./trace_datasets/tokenized/MeetingBank_train_tokenized.jsonl \
-  --model-name-or-path ./trace_outputs/osft_step2_fomc/hf_format/samples_5000.0 \
+  --model-name-or-path ./trace_outputs/osft_step2_fomc/hf_format/samples_500.0 \
   --learning-rate 5e-6 \
   --batch-size 128 \
   --max-tokens-per-gpu 128000 \
-  --max-epochs 1 \
+  --max-epochs 5 \
   --save-final-checkpoint \
   --osft \
-  --osft-unfreeze-rank-ratio 0.70 \
+  --osft-unfreeze-rank-ratio 0.50 \
   --osft-memory-efficient-init
 
 # STEP 4: ScienceQA (1 epoch, ~5000 samples)

@@ -23,6 +23,7 @@ from mini_trainer.utils import (
     destroy_distributed_environment,
 )
 from mini_trainer.training_types import TrainingMode
+from mini_trainer.memory_profiler import TrainingMemoryProfiler
 
 SaveType = Literal["min_samples", "epoch", "final", "best_val_loss"]
 
@@ -668,6 +669,9 @@ def train(
     step = 0
     total_samples_accumulated = 0
     total_tokens_processed = 0  # Track total loss-counted tokens for TOKEN mode
+
+    # Initialize memory profiler for OSFT vs SFT comparison
+    memory_profiler = TrainingMemoryProfiler()
     
     # Initialize the checkpointer to manage saving logic
     checkpointer = Checkpointer(
@@ -712,7 +716,13 @@ def train(
                     'position_ids': mb['position_ids'].to(device),
                 }
 
+                # Memory tracking: before forward pass
+                mem_before_forward = memory_profiler.measure_step('before_forward')
+
                 output = model(**model_inputs)
+
+                # Memory tracking: after forward pass
+                mem_after_forward = memory_profiler.measure_step('after_forward')
                 
                 # GPT-OSS: add auxiliary loss if present, otherwise use standard loss
                 if hasattr(output, 'aux_loss') and output.aux_loss is not None:
@@ -727,7 +737,14 @@ def train(
                 '''the loss is a sum of all cross entropy losses for all tokens in the batch, we divide by batch_num_loss_counted_tokens to get the average loss per token'''
                 loss = loss * world_size / batch_num_loss_counted_tokens
 
+                # Memory tracking: before backward pass
+                mem_before_backward = memory_profiler.measure_step('before_backward')
+
                 loss.backward()
+
+                # Memory tracking: after backward pass
+                mem_after_backward = memory_profiler.measure_step('after_backward')
+
                 torch.cuda.empty_cache()
 
                 batch_totals.accumulate_minibatch_metrics(
@@ -746,7 +763,14 @@ def train(
             bm = batch_totals.totals
             total_samples_accumulated += bm['num_samples']
             total_tokens_processed += batch_num_loss_counted_tokens  # Track tokens for TOKEN mode
+
+            # Memory tracking: before optimizer step (includes OSFT gradient projection)
+            mem_before_optimizer = memory_profiler.measure_step('before_optimizer')
+
             grad_norm = take_gradient_step(model, optimizer, lr_scheduler, expected_dtype=train_dtype)
+
+            # Memory tracking: after optimizer step
+            mem_after_optimizer = memory_profiler.measure_step('after_optimizer')
 
             batch_time = time.time() - batch_start_time
             batch_metrics = {
@@ -770,6 +794,21 @@ def train(
                     "peak_memory_usage_GB": float(torch.cuda.max_memory_allocated() / 1e9),
                     'val_loss': last_validation_loss,
                 }
+
+            # Add memory profiling metrics
+            batch_metrics.update(mem_before_forward)
+            batch_metrics.update(mem_after_forward)
+            batch_metrics.update(mem_before_backward)
+            batch_metrics.update(mem_after_backward)
+            batch_metrics.update(mem_before_optimizer)
+            batch_metrics.update(mem_after_optimizer)
+
+            # Add memory deltas for analysis
+            batch_metrics.update({
+                'forward_pass_memory_delta_gb': mem_after_forward['after_forward_memory_gb'] - mem_before_forward['before_forward_memory_gb'],
+                'backward_pass_memory_delta_gb': mem_after_backward['after_backward_memory_gb'] - mem_before_backward['before_backward_memory_gb'],
+                'optimizer_step_memory_delta_gb': mem_after_optimizer['after_optimizer_memory_gb'] - mem_before_optimizer['before_optimizer_memory_gb'],
+            })
             # Add validation metrics if it's time to validate
             if val_data_loader is not None and validation_frequency is not None and step % validation_frequency == 0:
                 val_metrics = compute_validation_loss(model, val_data_loader, device)
